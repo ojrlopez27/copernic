@@ -1,0 +1,350 @@
+{
+  "behaviors": [
+    {
+      "name": "get-self-location",
+      "preconditions": [
+        [
+          {
+            "label": "self-location-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "gps-turned-on",
+            "weight": 1,
+            "dependsOnDevice": true
+          }
+        ],
+        [
+          {
+            "label": "medium-battery",
+            "weight": 1,
+            "dependsOnDevice": true
+          },
+          {
+            "label": "high-battery",
+            "weight": 1,
+            "dependsOnDevice": true
+          }
+        ]
+      ],
+      "addList": [
+        "self-location-provided"
+      ],
+      "deleteList": [
+        "self-location-required"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "find-place-location",
+      "preconditions": [
+        [
+          {
+            "label": "place-location-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "self-location-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "place-name-provided",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "place-location-provided"
+      ],
+      "deleteList": [
+        "place-location-required"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "get-distance-to-place",
+      "preconditions": [
+        [
+          {
+            "label": "distance-to-place-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "place-location-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "self-location-provided",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "distance-to-place-provided"
+      ],
+      "deleteList": [
+        "distance-to-place-required"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "calculate-nearest-place",
+      "preconditions": [
+        [
+          {
+            "label": "calculate-nearest-place-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user1-distance-to-place-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user2-distance-to-place-provided",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "user1-is-closer-to-place",
+        "user2-is-closer-to-place"
+      ],
+      "deleteList": [
+        "user1-distance-to-place-provided",
+        "user2-distance-to-place-provided"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "share-grocery-list",
+      "preconditions": [
+        [
+          {
+            "label": "grocery-list-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "grocery-shopping-not-done",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "grocery-list-provided"
+      ],
+      "deleteList": [
+        "grocery-list-required"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "do-grocery-shopping",
+      "preconditions": [
+        [
+          {
+            "label": "grocery-shopping-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "grocery-list-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "is-closer-to-place",
+            "weight": 0.1
+          },
+          {
+            "label": "close-to-organic-supermarket",
+            "weight": 8
+          }
+        ]
+      ],
+      "addList": [
+        "grocery-shopping-done"
+      ],
+      "deleteList": [
+        "grocery-shopping-required",
+        "grocery-shopping-not-done"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "do-beer-shopping",
+      "preconditions": [
+        [
+          {
+            "label": "beer-shopping-not-done",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "beer-shopping-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "driver-license-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "is-closer-to-place",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "beer-shopping-done"
+      ],
+      "deleteList": [
+        "beer-shopping-required",
+        "beer-shopping-not-done"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "go-home-decor",
+      "preconditions": [
+        [
+          {
+            "label": "buy-decoration-required",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "is-closer-to-place",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "buy-decoration-done"
+      ],
+      "deleteList": [
+        "buy-decoration-required"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "organize-party",
+      "preconditions": [
+        [
+          {
+            "label": "party-not-organized",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user1-buy-decoration-done",
+            "weight": 1
+          },
+          {
+            "label": "user2-buy-decoration-done",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user1-beer-shopping-done",
+            "weight": 1
+          },
+          {
+            "label": "user2-beer-shopping-done",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user1-grocery-shopping-done",
+            "weight": 1
+          },
+          {
+            "label": "user2-grocery-shopping-done",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "organize-party-done"
+      ],
+      "deleteList": [
+        "party-not-organized"
+      ],
+      "addGoals": []
+    },
+    {
+      "name": "go-pharmacy",
+      "preconditions": [
+        [
+          {
+            "label": "somebody-has-headache",
+            "weight": 1
+          },
+          {
+            "label": "somebody-caught-cold",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "no-medication-at-home",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "has-coupons",
+            "weight": 10
+          }
+        ],
+        [
+          {
+            "label": "is-closer-to-place",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "buy-medication-done"
+      ],
+      "deleteList": [
+        "no-medication-at-home"
+      ],
+      "addGoals": []
+    }
+  ],
+  "states": [],
+  "goals": [],
+  "removePrecond": false,
+  "pi": 20,
+  "theta": 15,
+  "initialTheta": 15,
+  "phi": 20,
+  "gamma": 70,
+  "delta": 50
+}

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: Siafu:Siafu:1.0.6-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/Siafu/Siafu/1.0.6-SNAPSHOT/Siafu-1.0.6-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/Siafu/Siafu/1.0.6-SNAPSHOT/Siafu-1.0.6-SNAPSHOT-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/Siafu/Siafu/1.0.6-SNAPSHOT/Siafu-1.0.6-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

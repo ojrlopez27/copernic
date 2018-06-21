@@ -1,0 +1,14 @@
+
+build/*
+build/
+
+.gradle/*
+.gradle/
+
+.idea/*
+.idea/
+
+.DS_Store
+
+
+

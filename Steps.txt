@@ -1,0 +1,18 @@
+1. To modify the original Siafu simulator:
+- make changes on Eclipse
+- mvn install
+- mvn package
+
+2. To run it on Intellij
+- add the jar on libs folder
+- include the libs on build.gradle
+- in the VM args set (Run Configurations) add: -XstartOnFirstThread
+
+3. To add new users, services, devices and simulation steps:
+- Modify the json file of the BN
+- in Service.java add a mapping between the behavior name (in the json) and the service class
+- In the main class (e.g., TestDemo) add the new service to compositionController.instantiateServices
+- add new simulation steps in SimuConstants
+- add new users in compositionController.createUsers
+
+
