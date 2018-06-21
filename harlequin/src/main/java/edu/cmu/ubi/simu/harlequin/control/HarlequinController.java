@@ -452,9 +452,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private void checkCorrectSequence(int idx) {
         if( seqIdx < correctSeqOfServices.size() &&
                 !compositionController.getServices().get(idx).getName().equals( correctSeqOfServices.get(seqIdx) ) ) {
-//            throw new IllegalStateException(
-//                    String.format("Incorrect sequence of behaviors/services. It should be '%s' and it received '%s'",
-//                            correctSeqOfServices.get(seqIdx), compositionController.getServices().get(idx).getName()));
             Log4J.error(this, String.format("Incorrect sequence of behaviors/services. It should be '%s' and it received '%s'",
                     correctSeqOfServices.get(seqIdx), compositionController.getServices().get(idx).getName()));
         }
