@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+import static edu.cmu.ubi.simu.harlequin.util.ServiceConstants.*;
 import static edu.cmu.ubi.simu.scenario.demo.Constants.SimSteps.*;
 
 
@@ -51,29 +52,28 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private ConcurrentLinkedQueue<Pair<Long, Runnable>> actions = new ConcurrentLinkedQueue<>();
     private final static long FREQUENCY_BN_PLOT = TimeUnit.MILLISECONDS.toMillis(1000);
     private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(4000);
-    private final static String MOVE = "[MOVE]";
-    private final static String WANDER = "[WANDER]";
+
 
 
     private static List<String> correctSeqOfServices = Arrays.asList(
-            "alice-phone-get-self-location",
-            "bob-tablet-get-self-location",
-            "alice-phone-find-place-location",
-            "alice-phone-get-distance-to-place",
-            "bob-phone-find-place-location",
-            "bob-phone-get-distance-to-place",
-            "server-admin-calculate-nearest-place",
-            "alice-phone-share-grocery-list",
-            "bob-phone-do-grocery-shopping",
-            "alice-phone-find-place-location",
-            "alice-phone-do-grocery-shopping",
-            "bob-tablet-find-place-location",
-            "bob-phone-do-beer-shopping",
-            "bob-phone-find-place-location",
-            "bob-phone-go-home-decor",
-            "bob-phone-go-pharmacy",
-            "bob-tablet-go-home-decor",
-            "alice-phone-go-home-decor");
+            alice_phone_get_self_location,
+            bob_tablet_get_self_location,
+            alice_phone_find_place_location,
+            alice_phone_get_distance_to_place,
+            bob_phone_find_place_location,
+            bob_phone_get_distance_to_place,
+            server_admin_calculate_nearest_place,
+            alice_phone_share_grocery_list,
+            bob_phone_do_grocery_shopping,
+            alice_phone_find_place_location,
+            alice_phone_do_grocery_shopping,
+            bob_tablet_find_place_location,
+            bob_phone_do_beer_shopping,
+            bob_phone_find_place_location,
+            bob_phone_go_home_decor,
+            bob_phone_go_pharmacy,
+            bob_tablet_go_home_decor,
+            alice_phone_go_home_decor);
     private static int seqIdx = 0;
 
     private HarlequinController(){
@@ -121,22 +121,22 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         compositionController = new CompositionController("behavior-network.json");
 
         // create users
-        compositionController.createUsers("alice", "bob");
+        compositionController.createUsers(alice, bob);
 
         // create devices
-        compositionController.createDevice("bob", Device.TYPES.PHONE).setGPSturnedOn(false);
-        compositionController.createDevice("bob", Device.TYPES.TABLET).setBatteryLevel(6);
-        compositionController.createDevice("alice", Device.TYPES.PHONE);
+        compositionController.createDevice(bob, Device.TYPES.PHONE).setGPSturnedOn(false);
+        compositionController.createDevice(bob, Device.TYPES.TABLET).setBatteryLevel(6);
+        compositionController.createDevice(alice, Device.TYPES.PHONE);
         compositionController.createDevice( ADMIN, Device.TYPES.SERVER);
 
         // create services
         compositionController.instantiateServices( getMapOfServices(),
-                new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
+                new Pair<>(Arrays.asList(bob, alice), getUserServices()),
                 new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
 
         // set system/user goals and states
-        compositionController.addState(Arrays.asList("bob-party-not-organized", "alice-party-not-organized" ));
-        compositionController.setGoals( Arrays.asList(  "grocery-shopping-done", "whatever" )); // "organize-party-done"
+        compositionController.addState(Arrays.asList(bob_party_not_organized, alice_party_not_organized ));
+        compositionController.setGoals( Arrays.asList(  grocery_shopping_done, "whatever" )); // "organize_party_done"
         // let's extract xxx-required preconditions
         compositionController.endMeansAnalysis();
 
@@ -154,20 +154,20 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
     private List<String> getUserServices(){
         return Arrays.asList(
-                "get-self-location",
-                "find-place-location",
-                "get-distance-to-place",
-                "share-grocery-list",
-                "do-grocery-shopping",
-                "do-beer-shopping",
-                "go-home-decor",
-                "go-pharmacy");
+                get_self_location,
+                find_place_location,
+                get_distance_to_place,
+                share_grocery_list,
+                do_grocery_shopping,
+                do_beer_shopping,
+                go_home_decor,
+                go_pharmacy);
     }
 
     private List<String> getServerServices(){
         return Arrays.asList(
-                "calculate-nearest-place",
-                "organize-party");
+                calculate_nearest_place,
+                organize_party);
     }
 
     private BNGUIVisualizer createGUI(BehaviorNetwork network) {
@@ -212,7 +212,9 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 checkCorrectSequence(idx);
                 compositionController.executeService(idx, currentStep.ordinal());
                 String serviceName = compositionController.getServices().get(idx).getName();
-                serviceName = serviceName.replace("phone-", "").replace("tablet-", "");
+                serviceName = serviceName.replace("phone-", "")
+                        .replace("tablet-", "")
+                        .replace("smartwatch-", "");
                 Log4J.warn(this, "serviceName: " + serviceName);
                 List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
                 if(actions == null)
@@ -322,81 +324,81 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             switch (currentStep) {
                 case S0_BOB_STARTS:
                     //S1_ALICE_LOCATION:
-                    addToMap("alice-get-self-location",
+                    addToMap(alice_get_self_location,
                             new Pair<>("Alice", "InMind: Alice, I got your current location"));
                     //S2_BOB_LOCATION:
-                    addToMap("bob-get-self-location",
+                    addToMap(bob_get_self_location,
                             new Pair<>("Bob", "InMind: Bob, I got your current location"));
 
                     //S3_ALICE_FIND_GROCERY:
-                    addToMap("alice-find-place-location",
+                    addToMap(alice_find_place_location,
                             new Pair<>( "Alice","InMind: Searching for supermarkets near Alice..."));
                     //S4_ALICE_DIST_GROCERY:
-                    addToMap("alice-get-distance-to-place",
+                    addToMap(alice_get_distance_to_place,
                             new Pair<>("Alice","InMind: Alice, Market2 is close to you"));
                     //S5_BOB_FIND_GROCERY:
-                    addToMap("bob-find-place-location",
+                    addToMap(bob_find_place_location,
                             new Pair<>( "Bob", "InMind: Searching for supermarkets near Bob..."));
                     //S6_BOB_DIST_GROCERY:
-                    addToMap("bob-get-distance-to-place",
+                    addToMap(bob_get_distance_to_place,
                             new Pair<>("Bob", "InMind: Bob, Market1 is close to you"));
                     //S7_CLOSER_TO_GROCERY:
-                    addToMap("server-admin-calculate-nearest-place",
+                    addToMap(admin_calculate_nearest_place,
                             new Pair<>("Bob", "InMind: Bob, you are closer than Alice. " +
                                     "Do you want to do the grocery shopping?"));
                     //S8_ALICE_SHARE_SHOP_LIST:
-                    addToMap("alice-share-grocery-list",
+                    addToMap(alice_share_grocery_list,
                             new Pair<>("Alice", "InMind: Sharing shopping list from Alice"));
                     break;
 
                 case S9_BOB_DO_GROCERY:
                     //S9_1_BOB_MOVE_TO_GROCERY:
-                    addToMap("bob-do-grocery-shopping",
+                    addToMap(bob_do_grocery_shopping,
                             new Pair<>("Bob", MOVE));
                     //S10_ALICE_ADD_PREF:
-                    addToMap("alice-find-place-location",
+                    addToMap(alice_find_place_location,
                             new Pair<>("Alice", "InMind: Alice, there's an organic market nearby. " +
                                     "Do you want to do the grocery shopping?"));
                     break;
 
                 case S11_ALICE_DO_GROCERY:
-                    addToMap("alice-do-grocery-shopping",
+                    addToMap(alice_do_grocery_shopping,
                             new Pair<>("Bob", WANDER));
                     //S11_1_ALICE_MOVE_TO_GROCERY:
-                    addToMap("alice-do-grocery-shopping",
+                    addToMap(alice_do_grocery_shopping,
                             new Pair<>("Alice", MOVE));
                     //S12_BOB_FIND_BEER:
-                    addToMap("bob-find-place-location",
+                    addToMap(bob_find_place_location,
                             new Pair<>("Bob", "InMind: Bob, do you carry your driver license?"));
                     break;
 
                 case S13_BOB_GO_BEER_SHOP:
-                    addToMap("bob-do-beer-shopping",
+                    addToMap(bob_do_beer_shopping,
                             new Pair<>("Bob", "InMind: Bob, there's a beer shop nearby you"));
                     //S13_1_BOB_MOVE_BEER_SHOP:
-                    addToMap("bob-do-beer-shopping",
+                    addToMap(bob_do_beer_shopping,
                             new Pair<>("Bob", MOVE));
                     break;
 
                 case S14_BOB_FIND_HOME_DECO:
                     //S15_BOB_GO_HOME_DECO:
-                    addToMap("bob-find-place-location",
+                    addToMap(bob_find_place_location,
                             new Pair<>("Bob", "InMind: Bob, there's a HomeDeco on your way home"));
                     //S15_1_BOB_MOVE_HOME_DECO:
-                    addToMap("bob-go-home-decor",
+                    addToMap(bob_go_home_decor,
                             new Pair<>("Bob", MOVE));
                     break;
 
                 case S16_ALICE_HEADACHE:
                     //S17_BOB_COUPONS:
-                    addToMap("bob-go-pharmacy",
+                    addToMap(bob_go_pharmacy,
                             new Pair<>("Bob", "InMind: Bob, pharmacy 1 is closer, but you have some coupons for pharmacy 2"));
-                    addToMap("bob-go-pharmacy", new Pair<>("Bob", MOVE ));
+                    addToMap(bob_go_pharmacy, new Pair<>("Bob", MOVE ));
                     break;
 
                 case S18_BOB_GO_HOME_DECO:
-                    addToMap("bob-go-home-decor", new Pair<>("Bob", MOVE ));
-                    addToMap("alice-go-home-decor", new Pair<>("Alice", MOVE ));
+                    addToMap(bob_go_home_decor, new Pair<>("Bob", MOVE ));
+                    addToMap(alice_go_home_decor, new Pair<>("Alice", MOVE ));
                     break;
 
                 case S20_GO_HOME:
@@ -429,7 +431,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             agentModel.move(currentStep);
         }else {
             actions.add( new Pair<>(delay, () -> {
-                Log4J.error("runStep", "inside action.run. user: " + user + ", message: " + message);
                 if (Main.useSimu) agentModel.runStep(0, user, message);
                 sendToOrchestrator(user, message);
                 sendToChoreographer(user, message);
@@ -463,82 +464,82 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         if( currentStep.ordinal() < SimuConstants.SimSteps.values().length ) {
             switch (currentStep) {
                 case S7_CLOSER_TO_GROCERY:
-                    compositionController.addState(Arrays.asList("bob-grocery-shopping-not-done",
-                            "alice-grocery-shopping-not-done"));
-                    compositionController.removeState("calculate-nearest-place-required");
-                    compositionController.removeState("bob-distance-to-place-provided");
-                    compositionController.removeState("alice-distance-to-place-provided");
-                    compositionController.addGoal("organize-party-done");
+                    compositionController.addState(Arrays.asList(bob_grocery_shopping_not_done,
+                            alice_grocery_shopping_not_done));
+                    compositionController.removeState(calculate_nearest_place_required);
+                    compositionController.removeState(bob_distance_to_place_provided);
+                    compositionController.removeState(alice_distance_to_place_provided);
+                    compositionController.addGoal(organize_party_done);
                     break;
                 case S9_BOB_DO_GROCERY:
-                    compositionController.addState(Arrays.asList("bob-is-closer-to-place"));
+                    compositionController.addState(Arrays.asList(bob_is_closer_to_place));
                     break;
 
                 case S9_1_BOB_MOVE_TO_GROCERY:
-                    compositionController.addState(Arrays.asList("bob-is-closer-to-place"));
-                    compositionController.removeState("alice-is-closer-to-place");
-                    compositionController.removeState("bob-is-closer-to-place");
-                    compositionController.removeState("alice-place-location-provided");
-                    compositionController.addState(Arrays.asList("alice-place-location-required",
-                            "alice-place-name-provided"));
+                    compositionController.addState(Arrays.asList(bob_is_closer_to_place));
+                    compositionController.removeState(alice_is_closer_to_place);
+                    compositionController.removeState(bob_is_closer_to_place);
+                    compositionController.removeState(alice_place_location_provided);
+                    compositionController.addState(Arrays.asList(alice_place_location_required,
+                            alice_place_name_provided));
                     break;
                 case S10_ALICE_ADD_PREF:
-                    compositionController.addState(Arrays.asList("alice-close-to-organic-supermarket"));
-                    compositionController.removeState("alice-grocery-shopping-required");
+                    compositionController.addState(Arrays.asList(alice_close_to_organic_supermarket));
+                    compositionController.removeState(alice_grocery_shopping_required);
                     break;
                 case S11_ALICE_DO_GROCERY:
-                    compositionController.addState(Arrays.asList("alice-grocery-shopping-required"));
+                    compositionController.addState(Arrays.asList(alice_grocery_shopping_required));
                     break;
                 case S12_BOB_FIND_BEER:
-                    compositionController.removeState("bob-place-location-provided");
-                    compositionController.removeState("bob-grocery-shopping-required");
-                    compositionController.removeState("alice-grocery-shopping-required");
-                    compositionController.addState(Arrays.asList("bob-place-location-required",
-                            "bob-place-name-provided",
-                            "bob-beer-shopping-not-done",
-                            "bob-beer-shopping-required"));
+                    compositionController.removeState(bob_place_location_provided);
+                    compositionController.removeState(bob_grocery_shopping_required);
+                    compositionController.removeState(alice_grocery_shopping_required);
+                    compositionController.addState(Arrays.asList(bob_place_location_required,
+                            bob_place_name_provided,
+                            bob_beer_shopping_not_done,
+                            bob_beer_shopping_required));
                     break;
                 case S13_BOB_GO_BEER_SHOP:
-                    compositionController.removeState("bob-grocery-shopping-required");
-                    compositionController.removeState("alice-grocery-shopping-required");
-                    compositionController.removeState("bob-grocery-shopping-not-done");
-                    compositionController.addState(Arrays.asList("bob-driver-license-provided",
-                            "bob-is-closer-to-place",
-                            "bob-beer-shopping-not-done",
-                            "bob-beer-shopping-required"));
+                    compositionController.removeState(bob_grocery_shopping_required);
+                    compositionController.removeState(alice_grocery_shopping_required);
+                    compositionController.removeState(bob_grocery_shopping_not_done);
+                    compositionController.addState(Arrays.asList(bob_driver_license_provided,
+                            bob_is_closer_to_place,
+                            bob_beer_shopping_not_done,
+                            bob_beer_shopping_required));
                     break;
                 case S14_BOB_FIND_HOME_DECO:
-                    compositionController.removeState("bob-place-location-provided");
-                    compositionController.addState(Arrays.asList("bob-place-location-required",
-                            "bob-place-name-provided"));
+                    compositionController.removeState(bob_place_location_provided);
+                    compositionController.addState(Arrays.asList(bob_place_location_required,
+                            bob_place_name_provided));
                     break;
                 case S15_BOB_GO_HOME_DECO:
-                    compositionController.addState(Arrays.asList("bob-is-closer-to-place",
-                            "bob-buy-decoration-required"));
+                    compositionController.addState(Arrays.asList(bob_is_closer_to_place,
+                            bob_buy_decoration_required));
                     break;
                 case S15_1_BOB_MOVE_HOME_DECO:
-                    compositionController.removeState("bob-is-closer-to-place");
-                    compositionController.removeState("bob-buy-decoration-required");
+                    compositionController.removeState(bob_is_closer_to_place);
+                    compositionController.removeState(bob_buy_decoration_required);
                     break;
                 case S16_ALICE_HEADACHE:
-                    compositionController.removeState("bob-place-location-provided");
-                    compositionController.removeState("bob-buy-decoration-required");
+                    compositionController.removeState(bob_place_location_provided);
+                    compositionController.removeState(bob_buy_decoration_required);
                     compositionController.addState(Arrays.asList(
-                            "bob-place-name-provided",
-                            "bob-somebody-has-headache",
-                            "bob-no-medication-at-home",
-                            "bob-is-closer-to-place",
-                            "bob-has-coupons"));
+                            bob_place_name_provided,
+                            bob_somebody_has_headache,
+                            bob_no_medication_at_home,
+                            bob_is_closer_to_place,
+                            bob_has_coupons));
                     break;
                 case S17_BOB_COUPONS:
-                    compositionController.addState(Arrays.asList("bob-has-coupons"));
+                    compositionController.addState(Arrays.asList(bob_has_coupons));
                     break;
                 case S18_BOB_GO_HOME_DECO:
-                    compositionController.addState(Arrays.asList("bob-buy-decoration-required"));
+                    compositionController.addState(Arrays.asList(bob_buy_decoration_required));
                     break;
                 case S19_ALICE_GO_HOME_DECO:
-                    compositionController.addState(Arrays.asList("alice-buy-decoration-required",
-                            "alice-is-closer-to-place"));
+                    compositionController.addState(Arrays.asList(alice_buy_decoration_required,
+                            alice_is_closer_to_place));
                     break;
             }
         }
@@ -580,16 +581,16 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
     private Map<String,Class<? extends Service>> getMapOfServices() {
         Map<String, Class<? extends Service>> map = new HashMap<>();
-        map.put("get-self-location", LocationService.class);
-        map.put("find-place-location", FindPlaceService.class);
-        map.put("get-distance-to-place", DistanceCalculatorService.class);
-        map.put("calculate-nearest-place", WhoIsNearestService.class);
-        map.put("share-grocery-list", ShareGroceryListService.class);
-        map.put("do-grocery-shopping", DoGroceryShoppingService.class);
-        map.put("do-beer-shopping", DoBeerShoppingService.class);
-        map.put("go-home-decor", GoHomeDecoService.class);
-        map.put("organize-party", OrganizePartyService.class);
-        map.put("go-pharmacy", GoPharmacyService.class);
+        map.put(get_self_location, LocationService.class);
+        map.put(find_place_location, FindPlaceService.class);
+        map.put(get_distance_to_place, DistanceCalculatorService.class);
+        map.put(calculate_nearest_place, WhoIsNearestService.class);
+        map.put(share_grocery_list, ShareGroceryListService.class);
+        map.put(do_grocery_shopping, DoGroceryShoppingService.class);
+        map.put(do_beer_shopping, DoBeerShoppingService.class);
+        map.put(go_home_decor, GoHomeDecoService.class);
+        map.put(organize_party, OrganizePartyService.class);
+        map.put(go_pharmacy, GoPharmacyService.class);
         return map;
     }
 }
