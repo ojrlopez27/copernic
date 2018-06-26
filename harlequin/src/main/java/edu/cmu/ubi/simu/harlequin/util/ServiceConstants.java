@@ -11,7 +11,6 @@ public class ServiceConstants {
     public final static String alice_phone = "alice-phone-";
     public final static String bob_phone = "bob-phone-";
     public final static String bob_tablet = "bob-tablet-";
-    public final static String admin = "admin-";
 
 
     // generic services
@@ -33,10 +32,10 @@ public class ServiceConstants {
     public final static String alice_get_distance_to_place = "alice-" + get_distance_to_place;
     public final static String bob_find_place_location = "bob-" + find_place_location;
     public final static String bob_get_distance_to_place = "bob-" + get_distance_to_place;
-    public final static String admin_calculate_nearest_place = "admin-" + calculate_nearest_place;
+    public final static String cloud_calculate_nearest_place = "cloud-" + calculate_nearest_place;
     public final static String alice_share_grocery_list = "alice-" + share_grocery_list;
     public final static String bob_do_grocery_shopping = "bob-" + do_grocery_shopping;
-    public final static String alice_do_grocery_shopping = "alice-" + do_beer_shopping;
+    public final static String alice_do_grocery_shopping = "alice-" + do_grocery_shopping;
     public final static String bob_do_beer_shopping = "bob-" + do_beer_shopping;
     public final static String bob_go_home_decor = "bob-" + go_home_decor;
     public final static String bob_go_pharmacy = "bob-" + go_pharmacy;
@@ -50,7 +49,6 @@ public class ServiceConstants {
     public final static String alice_phone_get_distance_to_place = alice_phone + get_distance_to_place;
     public final static String bob_phone_find_place_location = bob_phone + find_place_location;
     public final static String bob_phone_get_distance_to_place = bob_phone + get_distance_to_place;
-    public final static String server_admin_calculate_nearest_place = admin + calculate_nearest_place;
     public final static String alice_phone_share_grocery_list = alice_phone + share_grocery_list;
     public final static String bob_phone_do_grocery_shopping = bob_phone + do_grocery_shopping;
     public final static String alice_phone_do_grocery_shopping = alice_phone + do_grocery_shopping;

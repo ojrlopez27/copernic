@@ -27,8 +27,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 import static edu.cmu.ubi.simu.harlequin.util.ServiceConstants.*;
 import static edu.cmu.ubi.simu.scenario.demo.Constants.SimSteps.*;
 
@@ -50,9 +51,9 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private Constants.SimSteps lastStep;
     private ConcurrentHashMap<String, List<Pair<String, String>>> simuActionsMap;
     private ConcurrentLinkedQueue<Pair<Long, Runnable>> actions = new ConcurrentLinkedQueue<>();
+    private AtomicBoolean stopServiceTriggering = new AtomicBoolean(false);
     private final static long FREQUENCY_BN_PLOT = TimeUnit.MILLISECONDS.toMillis(1000);
     private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(4000);
-
 
 
     private static List<String> correctSeqOfServices = Arrays.asList(
@@ -62,7 +63,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             alice_phone_get_distance_to_place,
             bob_phone_find_place_location,
             bob_phone_get_distance_to_place,
-            server_admin_calculate_nearest_place,
+            cloud_calculate_nearest_place,
             alice_phone_share_grocery_list,
             bob_phone_do_grocery_shopping,
             alice_phone_find_place_location,
@@ -75,6 +76,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             bob_tablet_go_home_decor,
             alice_phone_go_home_decor);
     private static int seqIdx = 0;
+
 
     private HarlequinController(){
         orchestrators = new HashMap<>();
@@ -127,12 +129,12 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         compositionController.createDevice(bob, Device.TYPES.PHONE).setGPSturnedOn(false);
         compositionController.createDevice(bob, Device.TYPES.TABLET).setBatteryLevel(6);
         compositionController.createDevice(alice, Device.TYPES.PHONE);
-        compositionController.createDevice( ADMIN, Device.TYPES.SERVER);
+        compositionController.createDevice( CLOUD, Device.TYPES.SERVER);
 
         // create services
         compositionController.instantiateServices( getMapOfServices(),
                 new Pair<>(Arrays.asList(bob, alice), getUserServices()),
-                new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
+                new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
         compositionController.addState(Arrays.asList(bob_party_not_organized, alice_party_not_organized ));
@@ -202,37 +204,44 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * plots the results on the chart.
      * @return
      */
-    public int runOneStep() {
-        compositionController.updateDeviceState();
-        int idx = compositionController.selectService()[0];
-        boolean stepIsValid = isStateValid();
-        if( stepIsValid ){
-            if( compositionController.isExecutable() ){
-                if(currentStep != null) lastStep = currentStep.copy();
-                checkCorrectSequence(idx);
-                compositionController.executeService(idx, currentStep.ordinal());
-                String serviceName = compositionController.getServices().get(idx).getName();
-                serviceName = serviceName.replace("phone-", "")
-                        .replace("tablet-", "")
-                        .replace("smartwatch-", "");
-                Log4J.warn(this, "serviceName: " + serviceName);
-                List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
-                if(actions == null)
-                    System.out.println("");
-                if( actions != null ) {
-                    for (Pair<String, String> action : actions) {
-                        runStep(DELAY_SERVICE_PROCESSING, action.fst, action.snd);
+    public void runOneStep() {
+        if( !stopServiceTriggering.get() ) {
+            compositionController.updateDeviceState();
+            int idx = compositionController.selectService()[0];
+            boolean stepIsValid = isStateValid();
+            if (stepIsValid) {
+                if (compositionController.isExecutable()) {
+                    if (currentStep != null) lastStep = currentStep.copy();
+                    checkCorrectSequence(idx);
+                    compositionController.executeService(idx, currentStep.ordinal());
+                    String serviceName = getActivatedServiceName(idx);
+                    if(serviceName.equals(alice_do_grocery_shopping))
+                        System.out.println("");
+                    Log4J.debug(this, "Executing service: " + serviceName);
+                    List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
+                    if (actions != null) {
+                        for (Pair<String, String> action : actions) {
+                            runStep(DELAY_SERVICE_PROCESSING, action.fst, action.snd);
+                        }
                     }
                 }
+                addEventToState();
             }
-            addEventToState();
+            if(shouldPlot) refreshPlot();
         }
-        if(shouldPlot) refreshPlot();
-        return idx;
+    }
+
+    private String getActivatedServiceName(int idx) {
+        String serviceName = compositionController.getServices().get(idx).getName();
+        serviceName = serviceName.replace("phone-", "")
+                .replace("tablet-", "")
+                .replace("smartwatch-", "");
+        return serviceName;
     }
 
     //TODO: we need to remove this in the future, this is just for demoing purposes
     private boolean isStateValid(){
+        //if(stopServiceTriggering.get()) return false;
         if(lastStep == null) return true;
         if(lastStep.ordinal() != currentStep.ordinal()) return true;
         //exceptions
@@ -343,7 +352,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     addToMap(bob_get_distance_to_place,
                             new Pair<>("Bob", "InMind: Bob, Market1 is close to you"));
                     //S7_CLOSER_TO_GROCERY:
-                    addToMap(admin_calculate_nearest_place,
+                    addToMap(cloud_calculate_nearest_place,
                             new Pair<>("Bob", "InMind: Bob, you are closer than Alice. " +
                                     "Do you want to do the grocery shopping?"));
                     //S8_ALICE_SHARE_SHOP_LIST:
@@ -431,6 +440,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             agentModel.move(currentStep);
         }else {
             actions.add( new Pair<>(delay, () -> {
+                Log4J.debug("HarlequinController","InMind action: " + message);
                 if (Main.useSimu) agentModel.runStep(0, user, message);
                 sendToOrchestrator(user, message);
                 sendToChoreographer(user, message);
@@ -444,7 +454,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         CommonUtils.execute(() -> {
             //we need to wait few seconds in order to show synchronized messages in the other phone
             CommonUtils.sleep(2000);
-            Log4J.debug("sendToChoreographer", String.format("session: %s,  message: %s", sessionFrom, message));
             CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message);
         });
     }
@@ -484,11 +493,14 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                             alice_place_name_provided));
                     break;
                 case S10_ALICE_ADD_PREF:
-                    compositionController.addState(Arrays.asList(alice_close_to_organic_supermarket));
+                    compositionController.addState(Arrays.asList(alice_close_to_organic_supermarket,
+                            bob_place_location_required));
                     compositionController.removeState(alice_grocery_shopping_required);
+                    compositionController.removeState(bob_place_location_provided);
                     break;
                 case S11_ALICE_DO_GROCERY:
-                    compositionController.addState(Arrays.asList(alice_grocery_shopping_required));
+                    compositionController.addState(Arrays.asList(alice_grocery_shopping_required,
+                            bob_place_location_provided));
                     break;
                 case S12_BOB_FIND_BEER:
                     compositionController.removeState(bob_place_location_provided);
@@ -567,8 +579,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             while(!Thread.interrupted()){
                 if(!actions.isEmpty() && canRun()){
                     Pair<Long, Runnable> action = actions.poll();
-                    if( !compositionController.getNetwork().isWaitingForUserSelection() )
+                    if( !compositionController.getNetwork().isWaitingForUserSelection() ) {
+                        stopServiceTriggering.set(true);
                         CommonUtils.sleep(action.fst);
+                        stopServiceTriggering.set(false);
+                    }
                     // this is done when picking a service from the GUI
                     // compositionController.getNetwork().shouldWaitForSync(false);
                     action.snd.run();

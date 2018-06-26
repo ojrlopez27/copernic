@@ -33,7 +33,6 @@ public class SimuOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void process(String message) throws Throwable {
         super.process(message);
-        Log4J.debug(this, message);
         SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
         // if we receive messages from the other phone, then just print them on the current phone
         if( sessionMessage.getMessageId() != null
