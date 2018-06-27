@@ -4,6 +4,12 @@ package edu.cmu.ubi.simu.harlequin.util;
  * Created by oscarr on 6/26/18.
  */
 public class ServiceConstants {
+
+    // message id
+    public final static String PHARMACY = "PHARMACY";
+    public final static String ORGANIC = "ORGANIC";
+
+    // actions
     public final static String MOVE = "[MOVE]";
     public final static String WANDER = "[WANDER]";
 

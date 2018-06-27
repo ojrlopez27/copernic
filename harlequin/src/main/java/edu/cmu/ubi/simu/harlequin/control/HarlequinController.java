@@ -215,8 +215,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     checkCorrectSequence(idx);
                     compositionController.executeService(idx, currentStep.ordinal());
                     String serviceName = getActivatedServiceName(idx);
-                    if(serviceName.equals(alice_do_grocery_shopping))
-                        System.out.println("");
                     Log4J.debug(this, "Executing service: " + serviceName);
                     List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
                     if (actions != null) {
@@ -260,8 +258,8 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         orchestrators.put(sessionId, orchestrator);
     }
 
-    public void sendToOrchestrator(String sessionId, String message) {
-        orchestrators.get(sessionId).sendInMindResponse(message);
+    public void sendToOrchestrator(String sessionId, String message, String messageId) {
+        orchestrators.get(sessionId).sendInMindResponse(message, messageId);
     }
 
     public String executeEvent(String sessionId, String command, Constants.SimSteps simuStep) {
@@ -439,15 +437,29 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             Log4J.error(this, "currentStep: " + currentStep);
             agentModel.move(currentStep);
         }else {
+            final String messageId = getMessageId();
             actions.add( new Pair<>(delay, () -> {
                 Log4J.debug("HarlequinController","InMind action: " + message);
                 if (Main.useSimu) agentModel.runStep(0, user, message);
-                sendToOrchestrator(user, message);
+                sendToOrchestrator(user, message, messageId);
                 sendToChoreographer(user, message);
             }));
         }
         currentStep = currentStep.increment();
     }
+
+
+    /**
+     * This method returns a message id that has to be send back to the phone
+     * @return
+     */
+    private String getMessageId(){
+        if(currentStep.equals(S9_BOB_DO_GROCERY)) return ORGANIC;
+        else if(currentStep.equals(S16_ALICE_HEADACHE)) return PHARMACY;
+        return "";
+    }
+
+
 
 
     public void sendToChoreographer(final String sessionFrom, final String message){
