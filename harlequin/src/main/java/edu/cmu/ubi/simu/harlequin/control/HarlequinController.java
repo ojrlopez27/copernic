@@ -437,7 +437,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             Log4J.error(this, "currentStep: " + currentStep);
             agentModel.move(currentStep);
         }else {
-            final String messageId = getMessageId();
+            final String messageId = getMessageId( false );
             actions.add( new Pair<>(delay, () -> {
                 Log4J.debug("HarlequinController","InMind action: " + message);
                 if (Main.useSimu) agentModel.runStep(0, user, message);
@@ -453,9 +453,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * This method returns a message id that has to be send back to the phone
      * @return
      */
-    private String getMessageId(){
-        if(currentStep.equals(S9_BOB_DO_GROCERY)) return ORGANIC;
-        else if(currentStep.equals(S16_ALICE_HEADACHE)) return PHARMACY;
+    private String getMessageId(boolean invokedFromChoreographer){
+        if(currentStep.equals(S9_BOB_DO_GROCERY) && !invokedFromChoreographer)
+            return ORGANIC;
+        else if(currentStep.equals(S16_ALICE_HEADACHE) && invokedFromChoreographer)
+            return PHARMACY;
         return "";
     }
 
@@ -463,10 +465,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
 
     public void sendToChoreographer(final String sessionFrom, final String message){
+        final String messageId = getMessageId( true );
         CommonUtils.execute(() -> {
             //we need to wait few seconds in order to show synchronized messages in the other phone
             CommonUtils.sleep(2000);
-            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message);
+            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, messageId);
         });
     }
 

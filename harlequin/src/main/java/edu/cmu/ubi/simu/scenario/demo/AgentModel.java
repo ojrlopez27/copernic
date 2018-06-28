@@ -152,22 +152,23 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 
             markAlice = new SpotMarker(Alice, "#1111CC");
             markBob = new SpotMarker(Alice, "#1111CC");
+
+            Alice.setName("Alice");
+            Alice.setPos(startAlice);
+            Alice.setImage("HumanYellow");
+            Alice.setVisible(true);
+            Alice.setSpeed(5);
+
+            Bob.setName("Bob");
+            Bob.setPos(startBob);
+            Bob.setImage("HumanBlue");
+            Bob.setVisible(true);
+            Bob.setSpeed(5);
+
+            world.stopSpinning(true);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		Alice.setName("Alice");
-		Alice.setPos(startAlice);
-		Alice.setImage("HumanYellow");
-		Alice.setVisible(true);
-		Alice.setSpeed(5);
-
-		Bob.setName("Bob");
-		Bob.setPos(startBob);
-		Bob.setImage("HumanBlue");
-		Bob.setVisible(true);
-		Bob.setSpeed(5);
-
-        world.stopSpinning(true);
 		return people;
 	}
 
@@ -201,8 +202,14 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	 * @param agents the agents to work on
 	 */
 	public void doIteration(final Collection<Agent> agents) {
-	    if( firstTime && DEMO_MODE){
-	        CommonUtils.sleep(10000);
+	    if( firstTime ){
+	        try{
+                world.addMarker( new DoubleLineMarker(Alice, getColor(""), new String[]{"I am Alice!"}));
+                world.addMarker( new DoubleLineMarker(Bob, getColor(""), new String[]{"I am Bob!"}) );
+            }catch (Exception e){
+	            e.printStackTrace();
+            }
+	        if(DEMO_MODE) CommonUtils.sleep(10000);
 	        firstTime = false;
         }
 		Calendar time = world.getTime();

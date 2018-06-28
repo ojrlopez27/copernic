@@ -36,8 +36,8 @@ public class SimuOrchestrator extends ProcessOrchestratorImpl {
         SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
         // if we receive messages from the other phone, then just print them on the current phone
         if( sessionMessage.getMessageId() != null
-                && sessionMessage.getMessageId().equals(Constants.CROSS_SESSION_MESSAGE) ){
-            sendInMindResponse(sessionMessage.getPayload());
+                && sessionMessage.getRequestType().equals(Constants.CROSS_SESSION_MESSAGE) ){
+            sendInMindResponse(sessionMessage.getPayload(), sessionMessage.getMessageId());
         }
         // otherwise, processes the message
         else {

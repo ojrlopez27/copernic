@@ -61,8 +61,6 @@ public class MessageController implements ResponseListener{
     public void connect(){
         clientCommController = new ClientCommController.Builder(new LogC() )
                 .setServerAddress( "tcp://inmind-harlequin.ddns.net:5555" )
-//                .setServerAddress("tcp://128.237.189.221:5555")
-                //.setServerAddress("tcp://100.6.9.197:5555")
                 .setSessionId(sessionId)
                 .setRequestType(Constants.REQUEST_CONNECT)
                 .setResponseListener(this)
@@ -133,7 +131,7 @@ public class MessageController implements ResponseListener{
                 mNotificationID = 2;
                 title = "Whole Foods Market";
                 description = "Match with your preferences!";
-                summary = "Whole Foods provides Organic and Non-GMO foods!";
+                summary = "There's a match with your preferences! WholeFoods offers Organic and Non-GMO foods!";
                 smallIcon = R.drawable.whole_foods_small;
                 bigIcon = R.drawable.whole_foods_big;
                 break;
