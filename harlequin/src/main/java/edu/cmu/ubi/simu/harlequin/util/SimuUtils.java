@@ -1,12 +1,10 @@
 package edu.cmu.ubi.simu.harlequin.util;
 
-import java.util.Arrays;
-
 /**
  * Created by oscarr on 6/15/18.
  */
 public class SimuUtils {
-    private final static int MAX_MSG_LENGTH = 25;
+    private final static int MAX_MSG_LENGTH = 20;
     private final static String MSG_TOKEN = "###_MSG_TOKEN_###";
 
     public static String[] breakIntoMessages(String message){

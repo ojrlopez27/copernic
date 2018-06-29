@@ -21,6 +21,7 @@ public class ModuleLoader {
                 .setPathLogs(CommonUtils.getProperty("harlequin.muf.logs.path.debug"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress( String.format("tcp://%s", CommonUtils.getPublicIP()) ) //"tcp://127.0.0.1") //use IP instead of 'localhost'
+                .setIsDebugMode(true)
                 .build();
     }
 

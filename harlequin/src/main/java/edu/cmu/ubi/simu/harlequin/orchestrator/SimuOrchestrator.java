@@ -59,7 +59,6 @@ public class SimuOrchestrator extends ProcessOrchestratorImpl {
         sessionMessage.setPayload(message);
         sessionMessage.setMessageId(messageId);
         sessionMessage.setPayload("[INMIND] " + sessionMessage.getPayload());
-        Log4J.debug(this, "sendInMindResponse: " + message);
         sendResponse( sessionMessage );
     }
 }
