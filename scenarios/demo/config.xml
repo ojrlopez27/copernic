@@ -40,6 +40,7 @@
 		<InPharmacy	  type="binary" thresholdvalue="1000"/>
 		<InHomeDeco	  type="binary" thresholdvalue="1000"/>
 		<InBeerShop	  type="binary" thresholdvalue="1000"/>
+		<StartBobAndAlice	  type="binary" thresholdvalue="1000"/>
 		<WiFiHotspot  type="discrete">
 			<threshold tag="OutOfRange" pixelvalue="3355443"/>
 			<threshold tag="VeryWeak" pixelvalue="6710886"/>
