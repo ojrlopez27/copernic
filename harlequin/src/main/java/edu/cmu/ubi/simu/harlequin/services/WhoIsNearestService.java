@@ -21,10 +21,7 @@ public class WhoIsNearestService extends edu.cmu.inmind.multiuser.controller.com
 
     @Override
     public boolean execute(int simulationStep) {
-        if( simulationStep == S8_ALICE_SHOP_LIST) {
-            network.triggerPostconditions(behavior, Arrays.asList("bob-is-closer-to-place"));
-            return true;
-        }
-        return false;
+        network.triggerPostconditions(behavior, Arrays.asList("bob-is-closer-to-place"));
+        return true;
     }
 }

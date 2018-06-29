@@ -57,27 +57,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(4000);
 
 
-    private static List<String> correctSeqOfServices = Arrays.asList(
-            alice_phone_get_self_location,
-            bob_tablet_get_self_location,
-            alice_phone_find_place_location,
-            alice_phone_get_distance_to_place,
-            bob_phone_find_place_location,
-            bob_phone_get_distance_to_place,
-            cloud_calculate_nearest_place,
-            alice_phone_share_grocery_list,
-            bob_phone_do_grocery_shopping,
-            alice_phone_find_place_location,
-            alice_phone_do_grocery_shopping,
-            bob_tablet_find_place_location,
-            bob_phone_do_beer_shopping,
-            bob_phone_find_place_location,
-            bob_phone_go_home_decor,
-            bob_phone_go_pharmacy,
-            bob_tablet_go_home_decor,
-            alice_phone_go_home_decor);
-    private static int seqIdx = 0;
-
 
     private HarlequinController(){
         orchestrators = new HashMap<>();
@@ -213,10 +192,15 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             if (stepIsValid) {
                 if (compositionController.isExecutable()) {
                     if (currentStep != null) lastStep = currentStep.copy();
-                    checkCorrectSequence(idx);
                     compositionController.executeService(idx, currentStep.ordinal());
                     String serviceName = getActivatedServiceName(idx);
                     Log4J.error(this, "Executing service: " + serviceName);
+                    if(serviceName.contains(cloud_calculate_nearest_place))
+                        Log4J.info(this, "1. executing cloud_calculate_nearest_place in runOneStep");
+                    if(serviceName.contains(bob_do_grocery_shopping))
+                        Log4J.info(this, "3. executing bob_do_grocery_shopping in runOneStep");
+                    if(serviceName.contains(alice_do_grocery_shopping))
+                        Log4J.info(this, "5. executing alice_do_grocery_shopping in runOneStep");
                     List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
                     if (actions != null) {
                         for (Pair<String, String> action : actions) {
@@ -273,9 +257,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
             case S9_BOB_DO_GROCERY:
                 response = "Sounds perfect Bob!";
+                Log4J.info(this, "2. receiving bob's confirmation on executeEvent");
                 break;
 
             case S11_ALICE_DO_GROCERY:
+                Log4J.info(this, "5. receiving alice's confirmation on executeEvent");
                 response = "A little change in plans, thanks Alice!";
                 break;
 
@@ -304,6 +290,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 break;
         }
         executeUserCommand(sessionId, command, simuStep);
+        addNextTriggerActions();
         sendToChoreographer(sessionId, response);
         return response;
     }
@@ -319,7 +306,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     public void executeUserCommand(String sessionId, String command, Constants.SimSteps simSteps) {
         if(Main.useSimu) agentModel.runStep(sessionId, command, simSteps);
         currentStep = simSteps.copy();
-        addNextTriggerActions();
+        Log4J.error(this, "***** copy. new value: " + currentStep);
     }
 
 
@@ -365,16 +352,19 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     //S9_1_BOB_MOVE_TO_GROCERY:
                     addToMap(bob_do_grocery_shopping,
                             new Pair<>("Bob", MOVE));
+                    addToMap(bob_do_grocery_shopping,
+                            new Pair<>("Bob", WANDER));
+                    Log4J.info(this, "3. adding bob-move action in addNextTriggerActions");
                     //S10_ALICE_ADD_PREF:
                     addToMap(alice_find_place_location,
                             new Pair<>("Alice", "InMind: Alice, at WholeFoods you can find organic food. " +
                                     "Do you want to do the grocery shopping?"));
+                    Log4J.info(this, "4. adding push-notification action in addNextTriggerActions");
                     break;
 
                 case S11_ALICE_DO_GROCERY:
                     Log4J.debug(this, "addNextTriggerActions: " + currentStep);
-                    addToMap(alice_do_grocery_shopping,
-                            new Pair<>("Bob", WANDER));
+                    Log4J.info(this, "5. adding alice-do-grocery action in addNextTriggerActions");
                     //S11_1_ALICE_MOVE_TO_GROCERY:
                     addToMap(alice_do_grocery_shopping,
                             new Pair<>("Alice", MOVE));
@@ -455,6 +445,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             }));
         }
         currentStep = currentStep.increment();
+        Log4J.error(this, "***** increment. new value: " + currentStep);
     }
 
 
@@ -463,16 +454,21 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * @return
      */
     private String getMessageId(boolean invokedFromChoreographer){
-        if(currentStep.equals(S9_1_BOB_MOVE_TO_GROCERY) && !invokedFromChoreographer)
+        Log4J.debug(this, "getMessageId. step: " + currentStep);
+        if(currentStep.equals(S9_BOB_DO_GROCERY) && !invokedFromChoreographer) {
+            Log4J.info(this, "4. returning organic in getMessageId");
             return ORGANIC;
-        else if(currentStep.equals(S16_ALICE_HEADACHE) && invokedFromChoreographer)
+        }else if(currentStep.equals(S16_ALICE_HEADACHE) && invokedFromChoreographer)
             return PHARMACY;
         return "";
     }
 
 
-
-
+    /**
+     * All messages that InMind shows on Bob's devices have to be shown on Alice's devices and vice versa
+     * @param sessionFrom
+     * @param message
+     */
     public void sendToChoreographer(final String sessionFrom, final String message){
         final String messageId = getMessageId( true );
         CommonUtils.execute(() -> {
@@ -480,16 +476,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             CommonUtils.sleep(2000);
             CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, messageId);
         });
-    }
-
-
-    private void checkCorrectSequence(int idx) {
-        if( seqIdx < correctSeqOfServices.size() &&
-                !compositionController.getServices().get(idx).getName().equals( correctSeqOfServices.get(seqIdx) ) ) {
-            Log4J.error(this, String.format("Incorrect sequence of behaviors/services. It should be '%s' and it received '%s'",
-                    correctSeqOfServices.get(seqIdx), compositionController.getServices().get(idx).getName()));
-        }
-        seqIdx++;
     }
 
 
@@ -507,29 +493,28 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                         setLastStepExecuted();
                         break;
                     case S9_BOB_DO_GROCERY:
-                        compositionController.addState(Arrays.asList(bob_is_closer_to_place));
+                        compositionController.addState(Arrays.asList(bob_is_willing_to_do_grocery_shopping));
+                        Log4J.info(this, "2. adding bob_is_willing_to_do_grocery_shopping to state in addEventState");
                         setLastStepExecuted();
                         break;
 
                     case S9_1_BOB_MOVE_TO_GROCERY:
-                        compositionController.addState(Arrays.asList(bob_is_closer_to_place));
-                        compositionController.removeState(alice_is_closer_to_place);
-                        compositionController.removeState(bob_is_closer_to_place);
-                        compositionController.removeState(alice_place_location_provided);
-                        compositionController.addState(Arrays.asList(alice_place_location_required,
-                                alice_place_name_provided));
-                        setLastStepExecuted();
+//                        compositionController.removeState(bob_is_closer_to_place);
+//                        setLastStepExecuted();
                         break;
                     case S10_ALICE_ADD_PREF:
                         compositionController.addState(Arrays.asList(alice_close_to_organic_supermarket,
                                 bob_place_location_required));
                         compositionController.removeState(alice_grocery_shopping_required);
                         compositionController.removeState(bob_place_location_provided);
+                        Log4J.info(this, "4. adding alice_close_to_organic_supermarket to state in addEventState");
                         setLastStepExecuted();
                         break;
                     case S11_ALICE_DO_GROCERY:
+                        Log4J.info(this, "5. adding alice_grocery_shopping_required to state in addEventState");
                         compositionController.addState(Arrays.asList(alice_grocery_shopping_required,
-                                bob_place_location_provided));
+                                bob_place_location_provided,
+                                alice_is_willing_to_do_grocery_shopping));
                         setLastStepExecuted();
                         break;
                     case S12_BOB_FIND_BEER:
@@ -545,7 +530,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     case S13_BOB_GO_BEER_SHOP:
                         compositionController.removeState(bob_grocery_shopping_required);
                         compositionController.removeState(alice_grocery_shopping_required);
-                        compositionController.removeState(bob_grocery_shopping_not_done);
                         compositionController.addState(Arrays.asList(bob_driver_license_provided,
                                 bob_is_closer_to_place,
                                 bob_beer_shopping_not_done,
@@ -599,6 +583,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
     private void setLastStepExecuted() {
         Log4J.debug(this, "addEventToState: " + currentStep);
+        Log4J.warn(this, Arrays.toString(compositionController.getNetwork().getState().toArray()));
         lastStepExecuted = currentStep.copy();
     }
 

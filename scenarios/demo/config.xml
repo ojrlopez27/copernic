@@ -12,7 +12,7 @@
 		<bottomleft  latitude="49.003410"  longitude="8.006800"/>
 	</calibration>
 	<!-- How many seconds does each simulation iteration represent-->
-	<iterationstep>30</iterationstep>
+	<iterationstep>15</iterationstep>
 	<!-- Simulation time at startup (World creation date) -->
 	<starttime>
 		<year>2018</year>

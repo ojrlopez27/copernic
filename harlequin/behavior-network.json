@@ -164,6 +164,12 @@
         ],
         [
           {
+            "label": "is-willing-to-do-grocery-shopping",
+            "weight": 1
+          }
+        ],
+        [
+          {
             "label": "grocery-list-provided",
             "weight": 1
           }

@@ -510,12 +510,13 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
     @Override
     public void move(SimSteps step) {
         switch (step) {
+
             case S9_BOB_DO_GROCERY:
-                movingSimuStep(true, Bob, market1, false);
-                CommonUtils.execute(() -> {
-                    CommonUtils.sleep(4000);
-                    Bob.wanderAround(pharmacy1, 10);
-                });
+                moveBobToGrocery();
+                break;
+
+            case S9_1_BOB_MOVE_TO_GROCERY:
+                moveBobToGrocery();
                 break;
 
             case S11_ALICE_DO_GROCERY:
@@ -560,9 +561,15 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 Bob.setDestination(home);
                 break;
             default:
-                throw new RuntimeException("Invalid simulation state");
+                throw new RuntimeException("Invalid simulation state: " + step);
         }
     }
 
-
+    private void moveBobToGrocery() {
+        movingSimuStep(true, Bob, market1, false);
+        CommonUtils.execute(() -> {
+            CommonUtils.sleep(4000);
+            Bob.wanderAround(pharmacy1, 10);
+        });
+    }
 }
