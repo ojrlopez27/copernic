@@ -143,6 +143,12 @@
             "label": "grocery-shopping-not-done",
             "weight": 1
           }
+        ],
+        [
+          {
+            "label": "has-shopping-list",
+            "weight": 1
+          }
         ]
       ],
       "addList": [

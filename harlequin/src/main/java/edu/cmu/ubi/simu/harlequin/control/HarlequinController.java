@@ -9,7 +9,6 @@ import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.bn.CompositionController;
 import edu.cmu.inmind.multiuser.controller.composer.devices.Device;
 import edu.cmu.inmind.multiuser.controller.composer.services.Service;
-import edu.cmu.inmind.multiuser.controller.composer.simulation.SimuConstants;
 import edu.cmu.inmind.multiuser.controller.composer.ui.BNGUIVisualizer;
 import edu.cmu.inmind.multiuser.controller.composer.ui.VisualizerObserver;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -31,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 import static edu.cmu.ubi.simu.harlequin.util.ServiceConstants.*;
-import static edu.cmu.ubi.simu.scenario.demo.Constants.SimSteps.*;
+import static edu.cmu.ubi.simu.scenario.demo.Constants.Events.*;
 
 
 /**
@@ -41,21 +40,18 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private boolean interactionHasStarted = false;
     private boolean shouldPlot = true;
     private CompositionController compositionController;
+    private Constants.Events currentEvent;
     private MultiuserController multiuserController;
     private BNGUIVisualizer plot;
     private AgentSimuExecutor agentModel;
     private Map<String, SimuOrchestrator> orchestrators;
     private World world;
-    private Constants.SimSteps currentStep;
-    private Constants.SimSteps lastStep;
-    private Constants.SimSteps lastStepExecuted = S0_BOB_STARTS;
-    private ConcurrentHashMap<String, List<Pair<String, String>>> simuActionsMap;
-    private ConcurrentLinkedQueue<Pair<Long, Runnable>> actions = new ConcurrentLinkedQueue<>();
+    private ConcurrentHashMap<String, List<Action>> simuActionsMap;
+    private ConcurrentLinkedQueue<Action> actions = new ConcurrentLinkedQueue<>();
     private AtomicBoolean stopServiceTriggering = new AtomicBoolean(false);
     private static HarlequinController instance;
     private final static long FREQUENCY_BN_PLOT = TimeUnit.MILLISECONDS.toMillis(1000);
     private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(4000);
-
 
 
     private HarlequinController(){
@@ -117,8 +113,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
-        compositionController.addState(Arrays.asList(bob_party_not_organized, alice_party_not_organized ));
-        compositionController.setGoals( Arrays.asList(  grocery_shopping_done, "whatever" )); // "organize_party_done"
+        addState(bob_party_not_organized,
+                alice_party_not_organized,
+                bob_grocery_shopping_not_done,
+                alice_grocery_shopping_not_done );
+        compositionController.setGoals( grocery_shopping_done, "whatever" ); // "organize_party_done"
         // let's extract xxx-required preconditions
         compositionController.endMeansAnalysis();
 
@@ -130,7 +129,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         compositionController.getNetwork().shouldWaitForUserSelection(true);
         compositionController.getNetwork().shouldWaitForSync(true);
 
-        new Thread(new ExecuteActions()).start();
+        CommonUtils.execute( new ExecuteActions() );
     }
 
 
@@ -174,7 +173,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     }
 
     private boolean canRun() {
-        return world != null && !world.isPaused() && !plot.isPaused() && interactionHasStarted && currentStep != null;
+        return world != null && !world.isPaused() && !plot.isPaused() && interactionHasStarted;
     }
 
 
@@ -188,27 +187,24 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         if( !stopServiceTriggering.get() ) {
             compositionController.updateDeviceState();
             int idx = compositionController.selectService()[0];
-            boolean stepIsValid = isStateValid();
-            if (stepIsValid) {
-                if (compositionController.isExecutable()) {
-                    if (currentStep != null) lastStep = currentStep.copy();
-                    compositionController.executeService(idx, currentStep.ordinal());
-                    String serviceName = getActivatedServiceName(idx);
-                    Log4J.error(this, "Executing service: " + serviceName);
-                    if(serviceName.contains(cloud_calculate_nearest_place))
-                        Log4J.info(this, "1. executing cloud_calculate_nearest_place in runOneStep");
-                    if(serviceName.contains(bob_do_grocery_shopping))
-                        Log4J.info(this, "3. executing bob_do_grocery_shopping in runOneStep");
-                    if(serviceName.contains(alice_do_grocery_shopping))
-                        Log4J.info(this, "5. executing alice_do_grocery_shopping in runOneStep");
-                    List<Pair<String, String>> actions = simuActionsMap.remove(serviceName);
-                    if (actions != null) {
-                        for (Pair<String, String> action : actions) {
-                            runStep(DELAY_SERVICE_PROCESSING, action.fst, action.snd);
-                        }
+            if (compositionController.isExecutable()) {
+                compositionController.executeService(idx);
+                String serviceName = getActivatedServiceName(idx);
+                Log4J.error(this, "Executing service: " + serviceName);
+                if(serviceName.contains(cloud_calculate_nearest_place))
+                    Log4J.info(this, "1. executing cloud_calculate_nearest_place in runOneStep");
+                if(serviceName.contains(bob_do_grocery_shopping))
+                    Log4J.info(this, "3. executing bob_do_grocery_shopping in runOneStep");
+                if(serviceName.contains(alice_do_grocery_shopping))
+                    Log4J.info(this, "5. executing alice_do_grocery_shopping in runOneStep");
+                if(serviceName.contains(alice_share_grocery_list))
+                    System.out.println("");
+                List<Action> actions = simuActionsMap.remove(serviceName);
+                if (actions != null) {
+                    for (Action action : actions) {
+                        processAction(action, serviceName);
                     }
                 }
-                addEventToState();
             }
             if(shouldPlot) refreshPlot();
         }
@@ -222,19 +218,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         return serviceName;
     }
 
-    //TODO: we need to remove this in the future, this is just for demoing purposes
-    private boolean isStateValid(){
-        //if(stopServiceTriggering.get()) return false;
-        if(lastStep == null) return true;
-        if(lastStep.ordinal() != currentStep.ordinal()) return true;
-        //exceptions
-        if(lastStep.equals(S9_BOB_DO_GROCERY) || lastStep.equals(S11_ALICE_DO_GROCERY)
-                || lastStep.equals(S13_BOB_GO_BEER_SHOP) || lastStep.equals(S14_BOB_FIND_HOME_DECO)
-                || lastStep.equals(S16_ALICE_HEADACHE) || lastStep.equals(S18_BOB_GO_HOME_DECO))
-            return true;
-        return false;
-    }
-
     public void addAgentModel(AgentSimuExecutor agentModel) {
         this.agentModel = agentModel;
     }
@@ -243,13 +226,17 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         orchestrators.put(sessionId, orchestrator);
     }
 
-    public void sendToOrchestrator(String sessionId, String message, String messageId) {
-        orchestrators.get(sessionId).sendInMindResponse(message, messageId);
+    public void sendToOrchestrator(final Action action) {
+        boolean shouldPushNotification = action.getNotificationMessage() != null
+                && !action.getNotificationMessage().isEmpty() && action.isMsgForSelf();
+        orchestrators.get(action.getUser()).sendInMindResponse(action.getMessage(), shouldPushNotification?
+                action.getNotificationMessage() : "");
     }
 
-    public String executeEvent(String sessionId, String command, Constants.SimSteps simuStep) {
+    public String executeEvent(String sessionId, String command, Constants.Events event) {
+        currentEvent = event.copy();
         String response = "";
-        switch (simuStep){
+        switch (event){
             case S0_BOB_STARTS:
                 response = "Definitively, I can help you guys with that! let me check available services...";
                 interactionHasStarted = true;
@@ -257,12 +244,15 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
             case S9_BOB_DO_GROCERY:
                 response = "Sounds perfect Bob!";
+                addState(getInfoFromStorage(event));
+                addState(bob_is_willing_to_do_grocery_shopping);
                 Log4J.info(this, "2. receiving bob's confirmation on executeEvent");
                 break;
 
             case S11_ALICE_DO_GROCERY:
                 Log4J.info(this, "5. receiving alice's confirmation on executeEvent");
                 response = "A little change in plans, thanks Alice!";
+                addState(alice_is_willing_to_do_grocery_shopping);
                 break;
 
             case S13_2_ALICE_AT_SUPERMARKET:
@@ -289,11 +279,31 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 response = "Thanks for letting me know";
                 break;
         }
-        executeUserCommand(sessionId, command, simuStep);
-        addNextTriggerActions();
-        sendToChoreographer(sessionId, response);
+        executeUserCommand(sessionId, command, event);
+        addNextTriggerActions(event);
+        sendToChoreographer(sessionId, response, getNotificationId(false, event));
         return response;
     }
+
+    /**
+     * This method simulates retrieving information from the local/remote storage, e.g.,
+     * a DB, the phone's SD card, etc.
+     * @param event
+     * @return
+     */
+    private String[] getInfoFromStorage(Constants.Events event){
+        switch (event){
+            case S9_BOB_DO_GROCERY:
+                return new String[]{alice_has_shopping_list};
+        }
+        return null;
+    }
+
+
+    public void addState(String... states) {
+        compositionController.getNetwork().setState( Arrays.asList(states) );
+    }
+
 
 
     /**
@@ -301,12 +311,10 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * happens.
      * @param sessionId
      * @param command
-     * @param simSteps
+     * @param event
      */
-    public void executeUserCommand(String sessionId, String command, Constants.SimSteps simSteps) {
-        if(Main.useSimu) agentModel.runStep(sessionId, command, simSteps);
-        currentStep = simSteps.copy();
-        Log4J.error(this, "***** copy. new value: " + currentStep);
+    public void executeUserCommand(String sessionId, String command, Constants.Events event) {
+        if(Main.useSimu) agentModel.runStep(sessionId, command, event);
     }
 
 
@@ -314,100 +322,95 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * This simulation actions will be executed later in the future, when the corresponding service (behavior)
      * is activated in runOneStep method.
      */
-    private void addNextTriggerActions() {
+    private void addNextTriggerActions(Constants.Events event) {
         try {
-            switch (currentStep) {
+            switch (event) {
                 case S0_BOB_STARTS:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S1_ALICE_LOCATION:
                     addToMap(alice_get_self_location,
-                            new Pair<>("Alice", "InMind: Alice, I got your current location"));
+                            new Action(alice, "InMind: Alice, I got your current location"));
                     //S2_BOB_LOCATION:
                     addToMap(bob_get_self_location,
-                            new Pair<>("Bob", "InMind: Bob, I got your current location"));
+                            new Action(bob, "InMind: Bob, I got your current location"));
 
                     //S3_ALICE_FIND_GROCERY:
                     addToMap(alice_find_place_location,
-                            new Pair<>( "Alice","InMind: Searching for supermarkets near Alice..."));
+                            new Action( alice,"InMind: Searching for supermarkets near Alice..."));
                     //S4_ALICE_DIST_GROCERY:
                     addToMap(alice_get_distance_to_place,
-                            new Pair<>("Alice","InMind: Alice, WholeFoods is 3.6 miles away"));
+                            new Action(alice,"InMind: Alice, WholeFoods is 3.6 miles away"));
                     //S5_BOB_FIND_GROCERY:
                     addToMap(bob_find_place_location,
-                            new Pair<>( "Bob", "InMind: Searching for supermarkets near Bob..."));
+                            new Action( bob, "InMind: Searching for supermarkets near Bob..."));
                     //S6_BOB_DIST_GROCERY:
                     addToMap(bob_get_distance_to_place,
-                            new Pair<>("Bob", "InMind: Bob, Target is 2 miles away"));
+                            new Action(bob, "InMind: Bob, Target is 2 miles away"));
                     //S7_CLOSER_TO_GROCERY:
                     addToMap(cloud_calculate_nearest_place,
-                            new Pair<>("Bob", "InMind: Bob, you are closer than Alice. " +
+                            new Action(bob, "InMind: Bob, you are closer than Alice. " +
                                     "Do you want to do the grocery shopping?"));
                     //S8_ALICE_SHARE_SHOP_LIST:
                     addToMap(alice_share_grocery_list,
-                            new Pair<>("Alice", "InMind: Sharing shopping list from Alice"));
+                            new Action(alice, "InMind: Sharing shopping list from Alice"));
                     break;
 
                 case S9_BOB_DO_GROCERY:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S9_1_BOB_MOVE_TO_GROCERY:
-                    addToMap(bob_do_grocery_shopping,
-                            new Pair<>("Bob", MOVE));
-                    addToMap(bob_do_grocery_shopping,
-                            new Pair<>("Bob", WANDER));
+                    addToMap(bob_do_grocery_shopping, new Action(bob, MOVE));
+                    addToMap(bob_do_grocery_shopping, new Action(bob, WANDER, true));
                     Log4J.info(this, "3. adding bob-move action in addNextTriggerActions");
                     //S10_ALICE_ADD_PREF:
                     addToMap(alice_find_place_location,
-                            new Pair<>("Alice", "InMind: Alice, at WholeFoods you can find organic food. " +
+                            new Action(alice, "InMind: Alice, at WholeFoods you can find organic food. " +
                                     "Do you want to do the grocery shopping?"));
                     Log4J.info(this, "4. adding push-notification action in addNextTriggerActions");
                     break;
 
                 case S11_ALICE_DO_GROCERY:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     Log4J.info(this, "5. adding alice-do-grocery action in addNextTriggerActions");
                     //S11_1_ALICE_MOVE_TO_GROCERY:
-                    addToMap(alice_do_grocery_shopping,
-                            new Pair<>("Alice", MOVE));
+                    addToMap(alice_do_grocery_shopping, new Action(alice, MOVE));
                     //S12_BOB_FIND_BEER:
                     addToMap(bob_find_place_location,
-                            new Pair<>("Bob", "InMind: Bob, do you carry your driver license?"));
+                            new Action(bob, "InMind: Bob, do you carry your driver license?"));
                     break;
 
                 case S13_BOB_GO_BEER_SHOP:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     addToMap(bob_do_beer_shopping,
-                            new Pair<>("Bob", "InMind: Bob, there's a beer shop nearby you"));
+                            new Action(bob, "InMind: Bob, there's a beer shop nearby you"));
                     //S13_1_BOB_MOVE_BEER_SHOP:
-                    addToMap(bob_do_beer_shopping,
-                            new Pair<>("Bob", MOVE));
+                    addToMap(bob_do_beer_shopping, new Action(bob, MOVE));
                     break;
 
                 case S14_BOB_FIND_HOME_DECO:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S15_BOB_GO_HOME_DECO:
                     addToMap(bob_find_place_location,
-                            new Pair<>("Bob", "InMind: Bob, IKEA is on your way home"));
+                            new Action(bob, "InMind: Bob, IKEA is on your way home"));
                     //S15_1_BOB_MOVE_HOME_DECO:
-                    addToMap(bob_go_home_decor,
-                            new Pair<>("Bob", MOVE));
+                    addToMap(bob_go_home_decor, new Action(bob, MOVE));
                     break;
 
                 case S16_ALICE_HEADACHE:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S17_BOB_COUPONS:
                     addToMap(bob_go_pharmacy,
-                            new Pair<>("Bob", "InMind: Bob, Rite Aid is closer, but you have some coupons for CVS"));
-                    addToMap(bob_go_pharmacy, new Pair<>("Bob", MOVE ));
+                            new Action(bob, "InMind: Bob, Rite Aid is closer, but you have some coupons for CVS"));
+                    addToMap(bob_go_pharmacy, new Action(bob, MOVE ));
                     break;
 
                 case S18_BOB_GO_HOME_DECO:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
-                    addToMap(bob_go_home_decor, new Pair<>("Bob", MOVE ));
-                    addToMap(alice_go_home_decor, new Pair<>("Alice", MOVE ));
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
+                    addToMap(bob_go_home_decor, new Action(bob, MOVE ));
+                    addToMap(alice_go_home_decor, new Action(alice, MOVE ));
                     break;
 
                 case S20_GO_HOME:
-                    Log4J.debug(this, "addNextTriggerActions: " + currentStep);
+                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     System.out.println("");
                     break;
             }
@@ -416,175 +419,152 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         }
     }
 
-    private void addToMap(String serviceName, Pair<String, String> newAction) {
-        List<Pair<String, String>> actions = simuActionsMap.get(serviceName);
+    private void addToMap(String serviceName, Action newAction) {
+        List<Action> actions = simuActionsMap.get(serviceName);
         if(actions == null) actions = new ArrayList<>();
         actions.add(newAction);
         simuActionsMap.put(serviceName, actions);
     }
 
     /**
-     * this method runs a step on the simulation and send messages to orchestrator so it
-     * can send it back to the device (client). We use a delay to simulate the time services
-     * spend doing some processing
-     * @param delay
-     * @param user
-     * @param message
+     * This method adds new actions that are later processed by the ExecuteAction class or calls the AgentModel
+     * class to run simulation steps (like move, wander, etc.)
+     * @param action
      */
-    private void runStep(long delay, String user, String message) {
-        if(message.equals(MOVE) || message.equals(WANDER)){
-            Log4J.error(this, "move: " + currentStep);
-            agentModel.move(currentStep);
-        }else {
-            final String messageId = getMessageId( false );
-            actions.add( new Pair<>(delay, () -> {
-                Log4J.debug("HarlequinController","InMind action: " + message);
-                if (Main.useSimu) agentModel.runStep(0, user, message);
-                sendToOrchestrator(user, message, messageId);
-                sendToChoreographer(user, message);
-            }));
+    private void processAction(Action action, String serviceName) {
+        boolean isMoving = false;
+        if(action.getMessage().equals(MOVE) || action.getMessage().equals(WANDER)){
+            Log4J.error(this, "move: " + currentEvent);
+            agentModel.move(currentEvent);
+            isMoving = true;
         }
-        currentStep = currentStep.increment();
-        Log4J.error(this, "***** increment. new value: " + currentStep);
+        String notificationMessage = getNotificationId( true, serviceName, action.getMessage() );
+        if(!isMoving || !notificationMessage.isEmpty()) {
+            action.setNotificationMessage(notificationMessage);
+            action.setMsgForSelf(true);
+            actions.add( action);
+        }
     }
 
 
     /**
      * This method returns a message id that has to be send back to the phone
+     * @param isMsgForMyself is a notification for the device that runs the service or for a device of other user?
+     * @param conditions      it can be either a service name or an event
      * @return
      */
-    private String getMessageId(boolean invokedFromChoreographer){
-        Log4J.debug(this, "getMessageId. step: " + currentStep);
-        if(currentStep.equals(S9_BOB_DO_GROCERY) && !invokedFromChoreographer) {
-            Log4J.info(this, "4. returning organic in getMessageId");
+    private String getNotificationId(boolean isMsgForMyself, Object... conditions){
+        if( isMsgForMyself && conditions[0].equals( alice_share_grocery_list ) ) {
+            Log4J.info(this, "4. returning organic in getNotificationId");
             return ORGANIC;
-        }else if(currentStep.equals(S16_ALICE_HEADACHE) && invokedFromChoreographer)
+        }else if( !isMsgForMyself && conditions[0].equals(S16_ALICE_HEADACHE) )
             return PHARMACY;
         return "";
     }
 
+
+    public void sendToChoreographer(Action action){
+        sendToChoreographer(action.getUser(), action.getMessage(),
+                !action.isMsgForSelf()? action.getNotificationMessage() : "");
+    }
 
     /**
      * All messages that InMind shows on Bob's devices have to be shown on Alice's devices and vice versa
      * @param sessionFrom
      * @param message
      */
-    public void sendToChoreographer(final String sessionFrom, final String message){
-        final String messageId = getMessageId( true );
+    public void sendToChoreographer(final String sessionFrom, final String message, final String notificationId){
         CommonUtils.execute(() -> {
             //we need to wait few seconds in order to show synchronized messages in the other phone
             CommonUtils.sleep(2000);
-            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, messageId);
+            if(!notificationId.isEmpty())
+                System.out.println("");
+            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, notificationId);
         });
     }
 
 
     private void addEventToState() {
-        if( !lastStepExecuted.equals(currentStep) ) {
-            if (currentStep.ordinal() < SimuConstants.SimSteps.values().length) {
-                switch (currentStep) {
-                    case S7_CLOSER_TO_GROCERY:
-                        compositionController.addState(Arrays.asList(bob_grocery_shopping_not_done,
-                                alice_grocery_shopping_not_done));
-                        compositionController.removeState(calculate_nearest_place_required);
-                        compositionController.removeState(bob_distance_to_place_provided);
-                        compositionController.removeState(alice_distance_to_place_provided);
-                        compositionController.addGoal(organize_party_done);
-                        setLastStepExecuted();
-                        break;
-                    case S9_BOB_DO_GROCERY:
-                        compositionController.addState(Arrays.asList(bob_is_willing_to_do_grocery_shopping));
-                        Log4J.info(this, "2. adding bob_is_willing_to_do_grocery_shopping to state in addEventState");
-                        setLastStepExecuted();
-                        break;
-
-                    case S9_1_BOB_MOVE_TO_GROCERY:
-//                        compositionController.removeState(bob_is_closer_to_place);
-//                        setLastStepExecuted();
-                        break;
-                    case S10_ALICE_ADD_PREF:
-                        compositionController.addState(Arrays.asList(alice_close_to_organic_supermarket,
-                                bob_place_location_required));
-                        compositionController.removeState(alice_grocery_shopping_required);
-                        compositionController.removeState(bob_place_location_provided);
-                        Log4J.info(this, "4. adding alice_close_to_organic_supermarket to state in addEventState");
-                        setLastStepExecuted();
-                        break;
-                    case S11_ALICE_DO_GROCERY:
-                        Log4J.info(this, "5. adding alice_grocery_shopping_required to state in addEventState");
-                        compositionController.addState(Arrays.asList(alice_grocery_shopping_required,
-                                bob_place_location_provided,
-                                alice_is_willing_to_do_grocery_shopping));
-                        setLastStepExecuted();
-                        break;
-                    case S12_BOB_FIND_BEER:
-                        compositionController.removeState(bob_place_location_provided);
-                        compositionController.removeState(bob_grocery_shopping_required);
-                        compositionController.removeState(alice_grocery_shopping_required);
-                        compositionController.addState(Arrays.asList(bob_place_location_required,
-                                bob_place_name_provided,
-                                bob_beer_shopping_not_done,
-                                bob_beer_shopping_required));
-                        setLastStepExecuted();
-                        break;
-                    case S13_BOB_GO_BEER_SHOP:
-                        compositionController.removeState(bob_grocery_shopping_required);
-                        compositionController.removeState(alice_grocery_shopping_required);
-                        compositionController.addState(Arrays.asList(bob_driver_license_provided,
-                                bob_is_closer_to_place,
-                                bob_beer_shopping_not_done,
-                                bob_beer_shopping_required));
-                        setLastStepExecuted();
-                        break;
-                    case S14_BOB_FIND_HOME_DECO:
-                        compositionController.removeState(bob_place_location_provided);
-                        compositionController.addState(Arrays.asList(bob_place_location_required,
-                                bob_place_name_provided));
-                        setLastStepExecuted();
-                        break;
-                    case S15_BOB_GO_HOME_DECO:
-                        compositionController.addState(Arrays.asList(bob_is_closer_to_place,
-                                bob_buy_decoration_required));
-                        setLastStepExecuted();
-                        break;
-                    case S15_1_BOB_MOVE_HOME_DECO:
-                        compositionController.removeState(bob_is_closer_to_place);
-                        compositionController.removeState(bob_buy_decoration_required);
-                        setLastStepExecuted();
-                        break;
-                    case S16_ALICE_HEADACHE:
-                        compositionController.removeState(bob_place_location_provided);
-                        compositionController.removeState(bob_buy_decoration_required);
-                        compositionController.addState(Arrays.asList(
-                                bob_place_name_provided,
-                                bob_somebody_has_headache,
-                                bob_no_medication_at_home,
-                                bob_is_closer_to_place,
-                                bob_has_coupons));
-                        setLastStepExecuted();
-                        break;
-                    case S17_BOB_COUPONS:
-                        compositionController.addState(Arrays.asList(bob_has_coupons));
-                        setLastStepExecuted();
-                        break;
-                    case S18_BOB_GO_HOME_DECO:
-                        compositionController.addState(Arrays.asList(bob_buy_decoration_required));
-                        setLastStepExecuted();
-                        break;
-                    case S19_ALICE_GO_HOME_DECO:
-                        compositionController.addState(Arrays.asList(alice_buy_decoration_required,
-                                alice_is_closer_to_place));
-                        setLastStepExecuted();
-                        break;
-                }
-            }
-        }
-    }
-
-    private void setLastStepExecuted() {
-        Log4J.debug(this, "addEventToState: " + currentStep);
-        Log4J.warn(this, Arrays.toString(compositionController.getNetwork().getState().toArray()));
-        lastStepExecuted = currentStep.copy();
+//        switch (event) {
+//            case S7_CLOSER_TO_GROCERY:
+//                compositionController.removeState(calculate_nearest_place_required);
+//                compositionController.removeState(bob_distance_to_place_provided);
+//                compositionController.removeState(alice_distance_to_place_provided);
+//                compositionController.addGoal(organize_party_done);
+//                break;
+//            case S9_BOB_DO_GROCERY:
+//                addState(bob_is_willing_to_do_grocery_shopping);
+//                Log4J.info(this, "2. adding bob_is_willing_to_do_grocery_shopping to state in addEventState");
+//                break;
+//
+//            case S9_1_BOB_MOVE_TO_GROCERY:
+////                        compositionController.removeState(bob_is_closer_to_place);
+////                        setLastStepExecuted();
+//                break;
+//            case S10_ALICE_ADD_PREF:
+//                addState(alice_close_to_organic_supermarket,
+//                        bob_place_location_required);
+//                compositionController.removeState(alice_grocery_shopping_required);
+//                compositionController.removeState(bob_place_location_provided);
+//                Log4J.info(this, "4. adding alice_close_to_organic_supermarket to state in addEventState");
+//                break;
+//            case S11_ALICE_DO_GROCERY:
+//                Log4J.info(this, "5. adding alice_grocery_shopping_required to state in addEventState");
+//                addState(alice_grocery_shopping_required,
+//                        bob_place_location_provided,
+//                        alice_is_willing_to_do_grocery_shopping);
+//                break;
+//            case S12_BOB_FIND_BEER:
+//                compositionController.removeState(bob_place_location_provided);
+//                compositionController.removeState(bob_grocery_shopping_required);
+//                compositionController.removeState(alice_grocery_shopping_required);
+//                addState(bob_place_location_required,
+//                        bob_place_name_provided,
+//                        bob_beer_shopping_not_done,
+//                        bob_beer_shopping_required);
+//                break;
+//            case S13_BOB_GO_BEER_SHOP:
+//                compositionController.removeState(bob_grocery_shopping_required);
+//                compositionController.removeState(alice_grocery_shopping_required);
+//                addState(bob_driver_license_provided,
+//                        bob_is_closer_to_place,
+//                        bob_beer_shopping_not_done,
+//                        bob_beer_shopping_required);
+//                break;
+//            case S14_BOB_FIND_HOME_DECO:
+//                compositionController.removeState(bob_place_location_provided);
+//                addState(bob_place_location_required,
+//                        bob_place_name_provided);
+//                break;
+//            case S15_BOB_GO_HOME_DECO:
+//                addState(bob_is_closer_to_place,
+//                        bob_buy_decoration_required);
+//                break;
+//            case S15_1_BOB_MOVE_HOME_DECO:
+//                compositionController.removeState(bob_is_closer_to_place);
+//                compositionController.removeState(bob_buy_decoration_required);
+//                break;
+//            case S16_ALICE_HEADACHE:
+//                compositionController.removeState(bob_place_location_provided);
+//                compositionController.removeState(bob_buy_decoration_required);
+//                addState(
+//                        bob_place_name_provided,
+//                        bob_somebody_has_headache,
+//                        bob_no_medication_at_home,
+//                        bob_is_closer_to_place,
+//                        bob_has_coupons);
+//                break;
+//            case S17_BOB_COUPONS:
+//                addState(bob_has_coupons);
+//                break;
+//            case S18_BOB_GO_HOME_DECO:
+//                addState(bob_buy_decoration_required);
+//                break;
+//            case S19_ALICE_GO_HOME_DECO:
+//                addState(alice_buy_decoration_required,
+//                        alice_is_closer_to_place);
+//                break;
+//        }
     }
 
 
@@ -603,20 +583,27 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         world.stopSpinning(paused);
     }
 
+
+    /**
+     * This class runs a step on the simulation and send messages to orchestrator so it
+     * can send it back to the device (client). We use a delay to simulate the time services
+     * spend doing some processing
+     */
     class ExecuteActions implements Runnable{
         @Override
         public void run() {
             while(!Thread.interrupted()){
                 if(!actions.isEmpty() && canRun()){
-                    Pair<Long, Runnable> action = actions.poll();
-                    if( !compositionController.getNetwork().isWaitingForUserSelection() ) {
+                    Action action = actions.poll();
+                    if( action.isShouldUseDelay() || !compositionController.getNetwork().isWaitingForUserSelection() ){
                         stopServiceTriggering.set(true);
-                        CommonUtils.sleep(action.fst);
+                        CommonUtils.sleep(DELAY_SERVICE_PROCESSING);
                         stopServiceTriggering.set(false);
                     }
-                    // this is done when picking a service from the GUI
-                    // compositionController.getNetwork().shouldWaitForSync(false);
-                    action.snd.run();
+                    Log4J.debug("ExecuteActions","InMind action: " + action.getMessage() + ", notificationId: " + action.getNotificationMessage());
+                    if (Main.useSimu) agentModel.runStep(0, action.getUser(), action.getMessage());
+                    sendToOrchestrator(action);
+                    sendToChoreographer(action);
                 }
                 CommonUtils.sleep(50);
             }

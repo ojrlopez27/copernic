@@ -52,7 +52,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	/**
 	 * Marks the steps in the simulation.
 	 */
-	private Constants.SimSteps simulationStep = SimSteps.S0_BOB_STARTS;
+	private Events event = Events.S0_BOB_STARTS;
 
 	/** The agent playing Alice. */
 	private Agent Alice;
@@ -209,7 +209,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
             }catch (Exception e){
 	            e.printStackTrace();
             }
-	        if(DEMO_MODE) CommonUtils.sleep(10000);
+	        if(VIDEO_MODE) CommonUtils.sleep(10000);
 	        firstTime = false;
         }
 		Calendar time = world.getTime();
@@ -222,9 +222,9 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 			handlePerson(a);
 		}
 
-		if (DEMO_MODE) {
+		if (VIDEO_MODE) {
 			try {
-				switch (simulationStep) {
+				switch (event) {
                     case S0_BOB_STARTS:
 						basicSimuStep(now.isAfter(S0_TIME), Bob,
                                 new String[]{ "Bob: InMind, Alice and I", "are organizing a party..."}, true, true, false);
@@ -378,7 +378,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 user.setDestination(destination);
                 if(options.length == 0 || options[0]) {
                     harlequinController.runOneStep();
-                    simulationStep = simulationStep.increment();
+                    //event = event.increment();
                 }
                 return true;
             }
@@ -411,8 +411,8 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 }
                 if(params.length == 0 || (params.length >= 3 && params[2]))
                     harlequinController.runOneStep();
-                simulationStep = simulationStep.increment();
-                // only for recording the video: if(DEMO_MODE) CommonUtils.sleep(4000);
+                //event = event.increment();
+                // only for recording the video: if(VIDEO_MODE) CommonUtils.sleep(4000);
                 //world.stopSpinning(false);
                 return true;
             }
@@ -477,13 +477,12 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
      * being called.
      * @param sessionId
      * @param message
-     * @param simuStep
+     * @param event
      */
     @Override
-    public void runStep(String sessionId, String message, SimSteps simuStep) {
+    public void runStep(String sessionId, String message, Events event) {
         Agent agent = sessionId.equalsIgnoreCase("Bob")? Bob : Alice;
         String[] messages = SimuUtils.breakIntoMessages(message);
-        simulationStep = simuStep;
         try{
             basicSimuStep(true, agent, messages, true, true, false);
         } catch (Exception e) {
@@ -500,17 +499,15 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
      * @param message
      */
     @Override
-    public Constants.SimSteps runStep(long delay, String sessionId, String message) {
+    public void runStep(long delay, String sessionId, String message) {
         CommonUtils.sleep(delay);
         Agent agent = sessionId.equalsIgnoreCase("Bob")? Bob : Alice;
         basicSimuStep(true, agent, SimuUtils.breakIntoMessages(message), true, true, false);
-        return simulationStep.copy();
     }
 
     @Override
-    public void move(SimSteps step) {
-        switch (step) {
-
+    public void move(Events event) {
+        switch (event) {
             case S9_BOB_DO_GROCERY:
                 moveBobToGrocery();
                 break;
@@ -561,7 +558,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 Bob.setDestination(home);
                 break;
             default:
-                throw new RuntimeException("Invalid simulation state: " + step);
+                throw new RuntimeException("Invalid simulation state: " + event);
         }
     }
 

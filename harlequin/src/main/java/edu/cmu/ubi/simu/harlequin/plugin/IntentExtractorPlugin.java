@@ -8,11 +8,11 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.ubi.simu.harlequin.control.HarlequinController;
 import edu.cmu.ubi.simu.harlequin.util.MsgConstants;
-import edu.cmu.ubi.simu.scenario.demo.Constants.SimSteps;
+import edu.cmu.ubi.simu.scenario.demo.Constants.Events;
 
 import java.util.regex.Pattern;
 
-import static edu.cmu.ubi.simu.scenario.demo.Constants.SimSteps.*;
+import static edu.cmu.ubi.simu.scenario.demo.Constants.Events.*;
 
 /**
  * Created by oscarr on 5/7/18.
@@ -31,7 +31,7 @@ public class IntentExtractorPlugin extends PluggableComponent {
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent blackboardEvent) throws Throwable {
         this.sessionId = getSessionId();
-        SimSteps simuStep = null;
+        Events simuStep = null;
         String command = ((String) blackboardEvent.getElement()).replace("\u0027", "\'");
 
         if( match(command, "*have*party*", "*having*party*") ){

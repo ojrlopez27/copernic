@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /**
  * Created by oscarr on 4/30/18.
  */
-public class ShareGroceryListService extends edu.cmu.inmind.multiuser.controller.composer.services.Service {
+public class ShareGroceryListService extends Service {
     private boolean hasShoppingList;
 
     public ShareGroceryListService(String deviceName, Behavior behavior, ConcurrentSkipListSet<String> state){
@@ -17,10 +17,8 @@ public class ShareGroceryListService extends edu.cmu.inmind.multiuser.controller
     }
 
     @Override
-    public boolean execute(int simulationStep) {
-        if( user.equals("bob") ) hasShoppingList = false;
-        else hasShoppingList = true;
-
+    public boolean execute(Object... params) {
+        hasShoppingList = user.equals("alice");
         if( hasShoppingList ) {
             network.triggerPostconditions(behavior,
                     Arrays.asList("bob-grocery-list-provided", "alice-grocery-list-provided"),

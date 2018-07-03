@@ -75,10 +75,10 @@ public class Constants {
 	 * going to run this simulation without a GUI, remember to disable this,
 	 * to keep the simulation from pausing.
 	 */
-	public static final boolean DEMO_MODE = false;
+	public static final boolean VIDEO_MODE = false;
 
-	/** Simulation steps. */
-	public enum SimSteps {
+	/** Events. */
+	public enum Events {
 
 		S0_BOB_STARTS,
 
@@ -138,13 +138,13 @@ public class Constants {
 
         S21_AT_HOME;
 
-		public SimSteps copy(){
+		public Events copy(){
 			return values()[this.ordinal()];
 		}
 
-		public SimSteps increment(){
-			return values()[this.ordinal() + 1];
-		}
+//		public Events increment(){
+//			return values()[this.ordinal() + 1];
+//		}
 	}
 
 	/** The period in which boats leave port. */
