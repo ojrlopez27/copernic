@@ -51,7 +51,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private AtomicBoolean stopServiceTriggering = new AtomicBoolean(false);
     private static HarlequinController instance;
     private final static long FREQUENCY_BN_PLOT = TimeUnit.MILLISECONDS.toMillis(1000);
-    private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(4000);
+    private final static long DELAY_SERVICE_PROCESSING = TimeUnit.MILLISECONDS.toMillis(2000);
 
 
     private HarlequinController(){
