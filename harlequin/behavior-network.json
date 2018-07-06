@@ -63,7 +63,8 @@
         "place-location-provided"
       ],
       "deleteList": [
-        "place-location-required"
+        "place-location-required",
+        "place-name-provided"
       ],
       "addGoals": []
     },
@@ -93,7 +94,8 @@
         "distance-to-place-provided"
       ],
       "deleteList": [
-        "distance-to-place-required"
+        "distance-to-place-required",
+        "place-location-provided"
       ],
       "addGoals": []
     },
@@ -125,7 +127,8 @@
       ],
       "deleteList": [
         "user1-distance-to-place-provided",
-        "user2-distance-to-place-provided"
+        "user2-distance-to-place-provided",
+        "calculate-nearest-place-required"
       ],
       "addGoals": []
     },
@@ -155,7 +158,8 @@
         "grocery-list-provided"
       ],
       "deleteList": [
-        "grocery-list-required"
+        "grocery-list-required",
+        "has-shopping-list"
       ],
       "addGoals": []
     },
@@ -196,7 +200,11 @@
       ],
       "deleteList": [
         "grocery-shopping-required",
-        "grocery-shopping-not-done"
+        "grocery-shopping-not-done",
+        "is-willing-to-do-grocery-shopping",
+        "grocery-list-provided",
+        "is-closer-to-place",
+        "close-to-organic-supermarket"
       ],
       "addGoals": []
     },
@@ -233,7 +241,9 @@
       ],
       "deleteList": [
         "beer-shopping-required",
-        "beer-shopping-not-done"
+        "beer-shopping-not-done",
+        "is-closer-to-place",
+        "driver-license-provided"
       ],
       "addGoals": []
     },
@@ -257,7 +267,8 @@
         "buy-decoration-done"
       ],
       "deleteList": [
-        "buy-decoration-required"
+        "buy-decoration-required",
+        "is-closer-to-place"
       ],
       "addGoals": []
     },

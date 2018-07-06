@@ -77,6 +77,8 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.log.LogC;
 
+import static com.sendbird.android.sample.utils.Constants.USER_COMMANDS;
+
 
 public class GroupChatFragment extends Fragment {
 
@@ -116,16 +118,6 @@ public class GroupChatFragment extends Fragment {
     private int mCurrentState = STATE_NORMAL;
     private BaseMessage mEditingMessage = null;
 
-    private String[] commands = {
-            "InMind: Alice and I are planning to have a party this weekend",
-            "OK InMind, I will do the grocery shopping",
-            "InMind, I'm at the super market",
-            "InMind: I'm done, what's next?",
-            "Bob, I had a terrible headache, could you stop by a pharmacy and buy some ibuprofen?",
-            "I'm here",
-            "Yes, I am carrying my driver license",
-            "Alice, I bought your medication"
-    };
 
     /**
      * To create an instance of this fragment, a Channel URL should be required.
@@ -179,7 +171,7 @@ public class GroupChatFragment extends Fragment {
         mMessageEditText = rootView.findViewById(R.id.edittext_group_chat_message);
         //Creating the instance of ArrayAdapter containing list of language names
         ArrayAdapter<String> adapter = new ArrayAdapter<>
-                (this.getActivity(), android.R.layout.simple_dropdown_item_1line, commands);
+                (this.getActivity(), android.R.layout.simple_dropdown_item_1line, USER_COMMANDS);
         //Getting the instance of AutoCompleteTextView
         mMessageEditText.setThreshold(1);//will start working from first character
         mMessageEditText.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView

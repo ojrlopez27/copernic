@@ -112,11 +112,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
-        addState(bob_party_not_organized,
+        addStates(bob_party_not_organized,
                 alice_party_not_organized,
                 bob_grocery_shopping_not_done,
                 alice_grocery_shopping_not_done );
-        compositionController.setGoals( grocery_shopping_done, "whatever" ); // "organize_party_done"
+        addGoals( grocery_shopping_done, "whatever" ); // "organize_party_done"
         // let's extract xxx-required preconditions
         compositionController.endMeansAnalysis();
 
@@ -186,18 +186,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         if( !stopServiceTriggering.get() ) {
             compositionController.updateDeviceState();
             int idx = compositionController.selectService()[0];
+            Log4J.debug(this, Arrays.toString(compositionController.getNetwork().getState().toArray()));
             if (compositionController.isExecutable()) {
                 compositionController.executeService(idx);
                 String serviceName = getActivatedServiceName(idx);
                 Log4J.error(this, "Executing service: " + serviceName);
-                if(serviceName.contains(cloud_calculate_nearest_place))
-                    Log4J.info(this, "1. executing cloud_calculate_nearest_place in runOneStep");
-                if(serviceName.contains(bob_do_grocery_shopping))
-                    Log4J.info(this, "3. executing bob_do_grocery_shopping in runOneStep");
-                if(serviceName.contains(alice_do_grocery_shopping))
-                    Log4J.info(this, "5. executing alice_do_grocery_shopping in runOneStep");
-                if(serviceName.contains(alice_share_grocery_list))
-                    System.out.println("");
                 List<Action> actions = simuActionsMap.remove(serviceName);
                 if (actions != null) {
                     for (Action action : actions) {
@@ -240,15 +233,13 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
             case S9_BOB_DO_GROCERY:
                 response = "Sounds perfect Bob!";
-                addState(getInfoFromStorage(event));
-                addState(bob_is_willing_to_do_grocery_shopping);
-                Log4J.info(this, "2. receiving bob's confirmation on executeEvent");
+                addStates(getInfoFromStorage(event));
+                addStates(bob_is_willing_to_do_grocery_shopping);
                 break;
 
             case S11_ALICE_DO_GROCERY:
-                Log4J.info(this, "5. receiving alice's confirmation on executeEvent");
                 response = "A little change in plans, thanks Alice!";
-                addState(alice_is_willing_to_do_grocery_shopping);
+                addStates(alice_is_willing_to_do_grocery_shopping);
                 break;
 
             case S13_2_ALICE_AT_SUPERMARKET:
@@ -261,6 +252,10 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
             case S14_BOB_FIND_HOME_DECO:
                 response = "Bob, let me check what is pending to do.";
+                break;
+
+            case S15_BOB_GO_HOME_DECO:
+                response = "Ok Bob, you can meet Alice there";
                 break;
 
             case S16_ALICE_HEADACHE:
@@ -277,7 +272,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         }
         executeUserCommand(sessionId, command, event);
         addNextTriggerActions(event);
-        sendToChoreographer(sessionId, response, "");
+        sendToChoreographer(sessionId, response);
         return response;
     }
 
@@ -296,11 +291,19 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     }
 
 
-    public void addState(String... states) {
+    public void addStates(String... states) {
         compositionController.getNetwork().setState( Arrays.asList(states) );
     }
 
+    public void removeStates(String... states){
+        compositionController.removeStates(states);
+    }
 
+    private void addGoals(String... goals) {
+        for(String goal : goals) {
+            compositionController.addGoal(goal);
+        }
+    }
 
     /**
      * This is called externally from a PlugabbleComponent or an Orchestrator when a user action/command
@@ -322,7 +325,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         try {
             switch (event) {
                 case S0_BOB_STARTS:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S1_ALICE_LOCATION:
                     addToMap(alice_get_self_location,
                             new Action(alice, "InMind: Alice, I got your current location"));
@@ -352,32 +354,38 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     break;
 
                 case S9_BOB_DO_GROCERY:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S9_1_BOB_MOVE_TO_GROCERY:
                     addToMap(bob_do_grocery_shopping, new Action(bob, MOVE, () -> {
-                        addState(alice_close_to_organic_supermarket);
-                        sendToOrchestrator( new Action(alice, "", ORGANIC) );
+                        removeStates(bob_is_willing_to_do_grocery_shopping);
+                        //it simulates getting a notification from an organic supermarket
+                        addStates(alice_close_to_organic_supermarket);
+                        runAction( new Action(alice, "InMind: Alice, at WholeFoods you can find organic food. "+
+                                "Do you want to do the grocery shopping?", ORGANIC) );
                     }));
-                    Log4J.info(this, "3. adding bob-move action in addNextTriggerActions");
-                    //S10_ALICE_ADD_PREF:
-                    addToMap(alice_find_place_location,
-                            new Action(alice, "InMind: Alice, at WholeFoods you can find organic food. " +
-                                    "Do you want to do the grocery shopping?"));
-                    Log4J.info(this, "4. adding push-notification action in addNextTriggerActions");
                     break;
 
                 case S11_ALICE_DO_GROCERY:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
-                    Log4J.info(this, "5. adding alice-do-grocery action in addNextTriggerActions");
                     //S11_1_ALICE_MOVE_TO_GROCERY:
-                    addToMap(alice_do_grocery_shopping, new Action(alice, MOVE));
+                    addToMap(alice_do_grocery_shopping, new Action(alice, MOVE, () -> {
+                        removeStates(bob_grocery_shopping_required,
+                                bob_is_closer_to_place,
+                                bob_is_willing_to_do_grocery_shopping,
+                                bob_place_location_provided);
+                        addStates(bob_place_location_required,
+                                bob_place_name_provided,
+                                bob_self_location_provided); // beer shop
+                        addGoals(organize_party_done);
+                    }));
                     //S12_BOB_FIND_BEER:
                     addToMap(bob_find_place_location,
                             new Action(bob, "InMind: Bob, do you carry your driver license?"));
                     break;
 
                 case S13_BOB_GO_BEER_SHOP:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
+                    addStates(bob_driver_license_provided,
+                        bob_is_closer_to_place,
+                        bob_beer_shopping_not_done,
+                        bob_beer_shopping_required);
                     addToMap(bob_do_beer_shopping,
                             new Action(bob, "InMind: Bob, there's a beer shop nearby you"));
                     //S13_1_BOB_MOVE_BEER_SHOP:
@@ -385,16 +393,20 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     break;
 
                 case S14_BOB_FIND_HOME_DECO:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S15_BOB_GO_HOME_DECO:
+                    addStates(bob_place_location_required);
+                    removeStates(bob_place_location_provided);
                     addToMap(bob_find_place_location,
                             new Action(bob, "InMind: Bob, IKEA is on your way home"));
                     //S15_1_BOB_MOVE_HOME_DECO:
                     addToMap(bob_go_home_decor, new Action(bob, MOVE));
                     break;
 
+                case S15_BOB_GO_HOME_DECO:
+                    addStates(bob_buy_decoration_required, bob_is_closer_to_place);
+                    break;
+
                 case S16_ALICE_HEADACHE:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S17_BOB_COUPONS:
                     addToMap(bob_go_pharmacy,
                             new Action(bob, "InMind: Bob, Rite Aid is closer, but you have some coupons for CVS"));
@@ -402,14 +414,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     break;
 
                 case S18_BOB_GO_HOME_DECO:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
                     addToMap(bob_go_home_decor, new Action(bob, MOVE ));
                     addToMap(alice_go_home_decor, new Action(alice, MOVE ));
                     break;
 
                 case S20_GO_HOME:
-                    Log4J.debug(this, "addNextTriggerActions: " + event);
-                    System.out.println("");
                     break;
             }
         }catch (Exception e){
@@ -431,7 +440,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      */
     private void processAction(Action action) {
         if(action.getMessage().equals(MOVE)){
-            Log4J.error(this, "move: " + currentEvent);
             agentModel.move(currentEvent, action.getCallback());
         }else{
             actions.add( action);
@@ -440,7 +448,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
 
     public void sendToChoreographer(Action action){
-        sendToChoreographer(action.getUser(), action.getMessage(), action.getNotificationMessage());
+        sendToChoreographer(action.getUser(), action.getMessage());
     }
 
     /**
@@ -448,11 +456,11 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * @param sessionFrom
      * @param message
      */
-    public void sendToChoreographer(final String sessionFrom, final String message, final String notificationId){
+    public void sendToChoreographer(final String sessionFrom, final String message){
         CommonUtils.execute(() -> {
             //we need to wait few seconds in order to show synchronized messages in the other phone
             CommonUtils.sleep(2000);
-            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, notificationId);
+            CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, null);
         });
     }
 
@@ -460,67 +468,67 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     private void addEventToState() {
 //        switch (event) {
 //            case S7_CLOSER_TO_GROCERY:
-//                compositionController.removeState(calculate_nearest_place_required);
-//                compositionController.removeState(bob_distance_to_place_provided);
-//                compositionController.removeState(alice_distance_to_place_provided);
+//                compositionController.removeStates(calculate_nearest_place_required);
+//                compositionController.removeStates(bob_distance_to_place_provided);
+//                compositionController.removeStates(alice_distance_to_place_provided);
 //                compositionController.addGoal(organize_party_done);
 //                break;
 //            case S9_BOB_DO_GROCERY:
-//                addState(bob_is_willing_to_do_grocery_shopping);
+//                addStates(bob_is_willing_to_do_grocery_shopping);
 //                Log4J.info(this, "2. adding bob_is_willing_to_do_grocery_shopping to state in addEventState");
 //                break;
 //
 //            case S9_1_BOB_MOVE_TO_GROCERY:
-////                        compositionController.removeState(bob_is_closer_to_place);
+////                        compositionController.removeStates(bob_is_closer_to_place);
 ////                        setLastStepExecuted();
 //                break;
 //            case S10_ALICE_ADD_PREF:
-//                addState(alice_close_to_organic_supermarket,
+//                addStates(alice_close_to_organic_supermarket,
 //                        bob_place_location_required);
-//                compositionController.removeState(alice_grocery_shopping_required);
-//                compositionController.removeState(bob_place_location_provided);
+//                compositionController.removeStates(alice_grocery_shopping_required);
+//                compositionController.removeStates(bob_place_location_provided);
 //                Log4J.info(this, "4. adding alice_close_to_organic_supermarket to state in addEventState");
 //                break;
 //            case S11_ALICE_DO_GROCERY:
 //                Log4J.info(this, "5. adding alice_grocery_shopping_required to state in addEventState");
-//                addState(alice_grocery_shopping_required,
+//                addStates(alice_grocery_shopping_required,
 //                        bob_place_location_provided,
 //                        alice_is_willing_to_do_grocery_shopping);
 //                break;
 //            case S12_BOB_FIND_BEER:
-//                compositionController.removeState(bob_place_location_provided);
-//                compositionController.removeState(bob_grocery_shopping_required);
-//                compositionController.removeState(alice_grocery_shopping_required);
-//                addState(bob_place_location_required,
+//                compositionController.removeStates(bob_place_location_provided);
+//                compositionController.removeStates(bob_grocery_shopping_required);
+//                compositionController.removeStates(alice_grocery_shopping_required);
+//                addStates(bob_place_location_required,
 //                        bob_place_name_provided,
 //                        bob_beer_shopping_not_done,
 //                        bob_beer_shopping_required);
 //                break;
 //            case S13_BOB_GO_BEER_SHOP:
-//                compositionController.removeState(bob_grocery_shopping_required);
-//                compositionController.removeState(alice_grocery_shopping_required);
-//                addState(bob_driver_license_provided,
+//                compositionController.removeStates(bob_grocery_shopping_required);
+//                compositionController.removeStates(alice_grocery_shopping_required);
+//                addStates(bob_driver_license_provided,
 //                        bob_is_closer_to_place,
 //                        bob_beer_shopping_not_done,
 //                        bob_beer_shopping_required);
 //                break;
 //            case S14_BOB_FIND_HOME_DECO:
-//                compositionController.removeState(bob_place_location_provided);
-//                addState(bob_place_location_required,
+//                compositionController.removeStates(bob_place_location_provided);
+//                addStates(bob_place_location_required,
 //                        bob_place_name_provided);
 //                break;
 //            case S15_BOB_GO_HOME_DECO:
-//                addState(bob_is_closer_to_place,
+//                addStates(bob_is_closer_to_place,
 //                        bob_buy_decoration_required);
 //                break;
 //            case S15_1_BOB_MOVE_HOME_DECO:
-//                compositionController.removeState(bob_is_closer_to_place);
-//                compositionController.removeState(bob_buy_decoration_required);
+//                compositionController.removeStates(bob_is_closer_to_place);
+//                compositionController.removeStates(bob_buy_decoration_required);
 //                break;
 //            case S16_ALICE_HEADACHE:
-//                compositionController.removeState(bob_place_location_provided);
-//                compositionController.removeState(bob_buy_decoration_required);
-//                addState(
+//                compositionController.removeStates(bob_place_location_provided);
+//                compositionController.removeStates(bob_buy_decoration_required);
+//                addStates(
 //                        bob_place_name_provided,
 //                        bob_somebody_has_headache,
 //                        bob_no_medication_at_home,
@@ -528,13 +536,13 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 //                        bob_has_coupons);
 //                break;
 //            case S17_BOB_COUPONS:
-//                addState(bob_has_coupons);
+//                addStates(bob_has_coupons);
 //                break;
 //            case S18_BOB_GO_HOME_DECO:
-//                addState(bob_buy_decoration_required);
+//                addStates(bob_buy_decoration_required);
 //                break;
 //            case S19_ALICE_GO_HOME_DECO:
-//                addState(alice_buy_decoration_required,
+//                addStates(alice_buy_decoration_required,
 //                        alice_is_closer_to_place);
 //                break;
 //        }
@@ -573,14 +581,24 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                         CommonUtils.sleep(DELAY_SERVICE_PROCESSING);
                         stopServiceTriggering.set(false);
                     }
-                    Log4J.debug("ExecuteActions","InMind action: " + action.getMessage() + ", notificationId: " + action.getNotificationMessage());
-                    if (Main.useSimu) agentModel.runStep(0, action.getUser(), action.getMessage());
-                    sendToOrchestrator(action);
-                    sendToChoreographer(action);
+                    runAction(action);
                 }
                 CommonUtils.sleep(50);
             }
         }
+    }
+
+    /**
+     * This method:
+     * 1. executes a specific action on the simulation model
+     * 2. sends the action to the orchestrator (i.e., the device corresponding to action.getUser())
+     * 3. sends the actions to the choreographer (i.e., other users and devices involved in the plan composition)
+     * @param action
+     */
+    private void runAction(Action action) {
+        if (Main.useSimu) agentModel.runStep(0, action.getUser(), action.getMessage());
+        sendToOrchestrator(action);
+        sendToChoreographer(action);
     }
 
 

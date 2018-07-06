@@ -45,6 +45,8 @@ public class IntentExtractorPlugin extends PluggableComponent {
             if(sessionId.equals("Bob")) simuStep = S13_BOB_GO_BEER_SHOP;
         }else if( match(command, "*done*what's next?*", "*next*") || command.contains("next?") ){
             if(sessionId.equals("Bob")) simuStep = S14_BOB_FIND_HOME_DECO;
+        }else if( match(command, "*IKEA*") ){
+            if(sessionId.equals("Bob")) simuStep = S15_BOB_GO_HOME_DECO;
         }else if( match(command, "*pharmacy*") || command.contains("pharmacy") ){
             if(sessionId.equals("Alice")) simuStep = S16_ALICE_HEADACHE;
         }else if( match(command, "*medication*") ){
@@ -59,7 +61,12 @@ public class IntentExtractorPlugin extends PluggableComponent {
         }
     }
 
-
+    /**
+     * A very simple template-based user intent extractor (acts as a simple NLU)
+     * @param command
+     * @param possibleMatches
+     * @return
+     */
     private boolean match(String command, String... possibleMatches){
         for(String possibleMatch : possibleMatches){
             if( Pattern.compile(possibleMatch.replace("*", "[a-zA-Z0-9_\\s\\?.,:'-]*"))

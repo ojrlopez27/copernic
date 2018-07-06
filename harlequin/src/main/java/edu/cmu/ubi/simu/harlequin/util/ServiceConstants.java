@@ -97,6 +97,8 @@ public class ServiceConstants {
     public final static String alice_is_willing_to_do_grocery_shopping = "alice-is-willing-to-do-grocery-shopping";
     public final static String alice_has_shopping_list = "alice-has-shopping-list";
     public final static String bob_has_shopping_list = "bob-has-shopping-list";
+    public final static String bob_self_location_provided = "bob-self-location-provided";
+    public final static String alice_self_location_provided = "alice-self-location-provided";
 
 
     // goals
@@ -106,5 +108,4 @@ public class ServiceConstants {
     //users
     public final static String alice = "alice";
     public final static String bob = "bob";
-
 }

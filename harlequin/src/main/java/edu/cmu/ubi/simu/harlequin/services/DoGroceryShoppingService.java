@@ -2,6 +2,7 @@ package edu.cmu.ubi.simu.harlequin.services;
 
 import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.services.Service;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -20,6 +21,7 @@ public class DoGroceryShoppingService extends Service {
     public boolean execute(Object... params) {
         if(user.equals("alice")) {
             network.triggerPostconditions(behavior, Arrays.asList("grocery-shopping-done"));
+            network.resetState();
         }
         return true;
     }

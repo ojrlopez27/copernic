@@ -518,14 +518,14 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 break;
 
             case S11_ALICE_DO_GROCERY:
-                Bob.wanderAround(pharmacy1, 10);
+                moveAliceToGrocery(callback);
                 break;
 
             case S11_1_ALICE_MOVE_TO_GROCERY:
-                movingSimuStep(true, Alice, market2, false);
+                moveAliceToGrocery(callback);
                 break;
 
-            case S13_1_BOB_MOVE_BEER_SHOP:
+            case S13_BOB_GO_BEER_SHOP:
                 movingSimuStep(true, Bob, beershop1, false);
                 break;
 
@@ -566,9 +566,14 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
     private void moveBobToGrocery(ActionCallback callback) {
         movingSimuStep(true, Bob, market1, false);
         CommonUtils.execute(() -> {
-            CommonUtils.sleep(2000);
+            CommonUtils.sleep(2500);
             callback.execute();
             Bob.wanderAround(pharmacy1, 10);
         });
+    }
+
+    private void moveAliceToGrocery(ActionCallback callback) {
+        callback.execute();
+        movingSimuStep(true, Alice, market2, false);
     }
 }
