@@ -29,6 +29,7 @@ import de.nec.nle.siafu.model.Position;
 import de.nec.nle.siafu.model.World;
 import de.nec.nle.siafu.types.EasyTime;
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
+import edu.cmu.ubi.simu.harlequin.control.ActionCallback;
 import edu.cmu.ubi.simu.harlequin.control.HarlequinController;
 import edu.cmu.ubi.simu.harlequin.plugin.AgentSimuExecutor;
 import edu.cmu.ubi.simu.harlequin.util.SimuUtils;
@@ -506,14 +507,14 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
     }
 
     @Override
-    public void move(Events event) {
+    public void move(Events event, ActionCallback callback) {
         switch (event) {
             case S9_BOB_DO_GROCERY:
-                moveBobToGrocery();
+                moveBobToGrocery(callback);
                 break;
 
             case S9_1_BOB_MOVE_TO_GROCERY:
-                moveBobToGrocery();
+                moveBobToGrocery(callback);
                 break;
 
             case S11_ALICE_DO_GROCERY:
@@ -562,10 +563,11 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
         }
     }
 
-    private void moveBobToGrocery() {
+    private void moveBobToGrocery(ActionCallback callback) {
         movingSimuStep(true, Bob, market1, false);
         CommonUtils.execute(() -> {
-            CommonUtils.sleep(4000);
+            CommonUtils.sleep(2000);
+            callback.execute();
             Bob.wanderAround(pharmacy1, 10);
         });
     }

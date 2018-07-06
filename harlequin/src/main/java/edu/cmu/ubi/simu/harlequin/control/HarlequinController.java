@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 import static edu.cmu.ubi.simu.harlequin.util.ServiceConstants.*;
-import static edu.cmu.ubi.simu.scenario.demo.Constants.Events.*;
 
 
 /**
@@ -202,7 +201,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 List<Action> actions = simuActionsMap.remove(serviceName);
                 if (actions != null) {
                     for (Action action : actions) {
-                        processAction(action, serviceName);
+                        processAction(action);
                     }
                 }
             }
@@ -227,10 +226,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
     }
 
     public void sendToOrchestrator(final Action action) {
-        boolean shouldPushNotification = action.getNotificationMessage() != null
-                && !action.getNotificationMessage().isEmpty() && action.isMsgForSelf();
-        orchestrators.get(action.getUser()).sendInMindResponse(action.getMessage(), shouldPushNotification?
-                action.getNotificationMessage() : "");
+        orchestrators.get(action.getUser()).sendInMindResponse(action.getMessage(), action.getNotificationMessage());
     }
 
     public String executeEvent(String sessionId, String command, Constants.Events event) {
@@ -281,7 +277,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         }
         executeUserCommand(sessionId, command, event);
         addNextTriggerActions(event);
-        sendToChoreographer(sessionId, response, getNotificationId(false, event));
+        sendToChoreographer(sessionId, response, "");
         return response;
     }
 
@@ -358,8 +354,10 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 case S9_BOB_DO_GROCERY:
                     Log4J.debug(this, "addNextTriggerActions: " + event);
                     //S9_1_BOB_MOVE_TO_GROCERY:
-                    addToMap(bob_do_grocery_shopping, new Action(bob, MOVE));
-                    addToMap(bob_do_grocery_shopping, new Action(bob, WANDER, true));
+                    addToMap(bob_do_grocery_shopping, new Action(bob, MOVE, () -> {
+                        addState(alice_close_to_organic_supermarket);
+                        sendToOrchestrator( new Action(alice, "", ORGANIC) );
+                    }));
                     Log4J.info(this, "3. adding bob-move action in addNextTriggerActions");
                     //S10_ALICE_ADD_PREF:
                     addToMap(alice_find_place_location,
@@ -428,44 +426,21 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
     /**
      * This method adds new actions that are later processed by the ExecuteAction class or calls the AgentModel
-     * class to run simulation steps (like move, wander, etc.)
+     * class to run simulation steps (like move, etc.)
      * @param action
      */
-    private void processAction(Action action, String serviceName) {
-        boolean isMoving = false;
-        if(action.getMessage().equals(MOVE) || action.getMessage().equals(WANDER)){
+    private void processAction(Action action) {
+        if(action.getMessage().equals(MOVE)){
             Log4J.error(this, "move: " + currentEvent);
-            agentModel.move(currentEvent);
-            isMoving = true;
-        }
-        String notificationMessage = getNotificationId( true, serviceName, action.getMessage() );
-        if(!isMoving || !notificationMessage.isEmpty()) {
-            action.setNotificationMessage(notificationMessage);
-            action.setMsgForSelf(true);
+            agentModel.move(currentEvent, action.getCallback());
+        }else{
             actions.add( action);
         }
     }
 
 
-    /**
-     * This method returns a message id that has to be send back to the phone
-     * @param isMsgForMyself is a notification for the device that runs the service or for a device of other user?
-     * @param conditions      it can be either a service name or an event
-     * @return
-     */
-    private String getNotificationId(boolean isMsgForMyself, Object... conditions){
-        if( isMsgForMyself && conditions[0].equals( alice_share_grocery_list ) ) {
-            Log4J.info(this, "4. returning organic in getNotificationId");
-            return ORGANIC;
-        }else if( !isMsgForMyself && conditions[0].equals(S16_ALICE_HEADACHE) )
-            return PHARMACY;
-        return "";
-    }
-
-
     public void sendToChoreographer(Action action){
-        sendToChoreographer(action.getUser(), action.getMessage(),
-                !action.isMsgForSelf()? action.getNotificationMessage() : "");
+        sendToChoreographer(action.getUser(), action.getMessage(), action.getNotificationMessage());
     }
 
     /**
@@ -477,8 +452,6 @@ public class HarlequinController implements Runnable, VisualizerObserver {
         CommonUtils.execute(() -> {
             //we need to wait few seconds in order to show synchronized messages in the other phone
             CommonUtils.sleep(2000);
-            if(!notificationId.isEmpty())
-                System.out.println("");
             CrossSessionChoreographer.getInstance().passMessage(sessionFrom, message, notificationId);
         });
     }
@@ -595,7 +568,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
             while(!Thread.interrupted()){
                 if(!actions.isEmpty() && canRun()){
                     Action action = actions.poll();
-                    if( action.isShouldUseDelay() || !compositionController.getNetwork().isWaitingForUserSelection() ){
+                    if( !compositionController.getNetwork().isWaitingForUserSelection() ){
                         stopServiceTriggering.set(true);
                         CommonUtils.sleep(DELAY_SERVICE_PROCESSING);
                         stopServiceTriggering.set(false);

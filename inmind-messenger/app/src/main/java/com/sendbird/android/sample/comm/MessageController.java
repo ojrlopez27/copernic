@@ -24,6 +24,8 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.log.LogC;
 
+import static com.sendbird.android.sample.utils.Constants.INMIND;
+
 /**
  * Created by oscarr on 6/8/18.
  */
@@ -67,14 +69,19 @@ public class MessageController implements ResponseListener{
                 .build();
     }
 
-    public static void send(final String message){
+    public void send(final String message){
+        send(message, 0);
+    }
+
+    public void send(final String message, final long delay){
         CommonUtils.execute(new Runnable() {
             @Override
             public void run() {
+                if( delay > 0 ) CommonUtils.sleep(delay);
                 SessionMessage sessionMessage = new SessionMessage();
                 sessionMessage.setPayload(message);
-                sessionMessage.setSessionId(instance.sessionId);
-                instance.clientCommController.send(instance.sessionId, sessionMessage);
+                sessionMessage.setSessionId(sessionId);
+                clientCommController.send(sessionId, sessionMessage);
             }
         });
     }
@@ -92,20 +99,25 @@ public class MessageController implements ResponseListener{
     public void process(final String message) {
         // message from InMind
         final SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
-        if( activity != null && !message.contains(Constants.SESSION_INITIATED)
-                && !message.contains(Constants.SESSION_RECONNECTED)){
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    chatAdapter.addFirst( BaseMessage.buildFromSerializedData(
-                            new InMindMessage( String.valueOf(random.nextLong()),
-                                    sessionMessage.getPayload()).serialize() ));
+        if( !message.contains(Constants.SESSION_INITIATED)
+                && !message.contains(Constants.SESSION_RECONNECTED) ) {
+            if( activity != null ){
+                if( sessionMessage.getPayload() != null && !sessionMessage.getPayload().isEmpty() &&
+                        !sessionMessage.getPayload().equals(INMIND)) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            chatAdapter.addFirst(BaseMessage.buildFromSerializedData(
+                                    new InMindMessage(String.valueOf(random.nextLong()),
+                                            sessionMessage.getPayload()).serialize()));
+                        }
+                    });
                 }
-            });
-        }
-
-        if(activity != null) {
-            showNotification( sessionMessage.getMessageId() );
+                showNotification( sessionMessage.getMessageId() );
+            }
+        }else{
+            // Let's tell MUF that we are ready to start conversation
+            send("Hi", 2000);
         }
     }
 
@@ -117,55 +129,57 @@ public class MessageController implements ResponseListener{
         String description = "";
         String summary = "";
 
-        switch (notificationType){
-            case "PHARMACY":
-                mNotificationID = 1;
-                title = "CVS Pharmacy";
-                description = "CVS Discount Coupons";
-                summary = "You have some discount coupons waiting for you";
-                smallIcon = R.drawable.cvs_small;
-                bigIcon = R.drawable.cvs_big;
-                break;
+        if(notificationType != null) {
+            switch (notificationType) {
+                case "PHARMACY":
+                    mNotificationID = 1;
+                    title = "CVS Pharmacy";
+                    description = "CVS Discount Coupons";
+                    summary = "You have some discount coupons waiting for you";
+                    smallIcon = R.drawable.cvs_small;
+                    bigIcon = R.drawable.cvs_big;
+                    break;
 
-            case "ORGANIC":
-                mNotificationID = 2;
-                title = "Whole Foods Market";
-                description = "Match with your preferences!";
-                summary = "There's a match with your preferences! WholeFoods offers Organic and Non-GMO foods!";
-                smallIcon = R.drawable.whole_foods_small;
-                bigIcon = R.drawable.whole_foods_big;
-                break;
+                case "ORGANIC":
+                    mNotificationID = 2;
+                    title = "Whole Foods Market";
+                    description = "Match with your preferences!";
+                    summary = "There's a match with your preferences! WholeFoods offers Organic and Non-GMO foods!";
+                    smallIcon = R.drawable.whole_foods_small;
+                    bigIcon = R.drawable.whole_foods_big;
+                    break;
 
-        }
+            }
 
-        if(mNotificationID != -1) {
-            //Sound & icon related to notification
-            Uri mNotificationSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Bitmap bitmap = BitmapFactory.decodeResource(ctx.getResources(), bigIcon);
-            //Build the object and set the title, text, sound etc.. properties
-            NotificationCompat.Builder nb = new NotificationCompat.Builder(ctx, "channelId")
-                    .setLargeIcon(bitmap)
-                    .setContentTitle(title)
-                    .setContentText(description)
-                    .setSound(mNotificationSoundUri)
-                    .setSmallIcon(smallIcon) //to small icon on the right hand side
-                    .setWhen(System.currentTimeMillis()); // Displays the date on right side bottom
+            if (mNotificationID != -1) {
+                //Sound & icon related to notification
+                Uri mNotificationSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                Bitmap bitmap = BitmapFactory.decodeResource(ctx.getResources(), bigIcon);
+                //Build the object and set the title, text, sound etc.. properties
+                NotificationCompat.Builder nb = new NotificationCompat.Builder(ctx, "channelId")
+                        .setLargeIcon(bitmap)
+                        .setContentTitle(title)
+                        .setContentText(description)
+                        .setSound(mNotificationSoundUri)
+                        .setSmallIcon(smallIcon) //to small icon on the right hand side
+                        .setWhen(System.currentTimeMillis()); // Displays the date on right side bottom
 
-            NotificationCompat.BigPictureStyle s =
-                    new NotificationCompat.BigPictureStyle().bigPicture(bitmap);
-            s.setSummaryText(summary);
-            nb.setStyle(s);
+                NotificationCompat.BigPictureStyle s =
+                        new NotificationCompat.BigPictureStyle().bigPicture(bitmap);
+                s.setSummaryText(summary);
+                nb.setStyle(s);
 
-            Notification mNotificationObject = nb.build();
-            //This is to keep the default settings of notification,
-            mNotificationObject.defaults |= Notification.DEFAULT_VIBRATE;
-            mNotificationObject.flags |= Notification.FLAG_AUTO_CANCEL;
-            //This is to show the ticker text which appear at top.
-            mNotificationObject.tickerText = title + "n" + description;
-            //Trigger the notification
-            NotificationManager manager = (NotificationManager)
-                    ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.notify(mNotificationID, mNotificationObject);
+                Notification mNotificationObject = nb.build();
+                //This is to keep the default settings of notification,
+                mNotificationObject.defaults |= Notification.DEFAULT_VIBRATE;
+                mNotificationObject.flags |= Notification.FLAG_AUTO_CANCEL;
+                //This is to show the ticker text which appear at top.
+                mNotificationObject.tickerText = title + "n" + description;
+                //Trigger the notification
+                NotificationManager manager = (NotificationManager)
+                        ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+                manager.notify(mNotificationID, mNotificationObject);
+            }
         }
     }
 }

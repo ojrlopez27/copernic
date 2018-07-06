@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
+import static com.sendbird.android.sample.utils.Constants.INMIND;
+
 
 public class GroupChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public static final String URL_PREVIEW_CUSTOM_TYPE = "url_preview";
@@ -293,7 +295,7 @@ public class GroupChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         BaseMessage message = mMessageList.get(position);
 
         if (message instanceof UserMessage) {
-            if( ((UserMessage) message).getMessage().startsWith("[INMIND] ") ){
+            if( ((UserMessage) message).getMessage().startsWith(INMIND) ){
                 return VIEW_TYPE_INMIND_MESSAGE;
             }
             UserMessage userMessage = (UserMessage) message;
@@ -801,7 +803,7 @@ public class GroupChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 nicknameText.setText(message.getSender().getNickname());
             }
 
-            messageText.setText(message.getMessage().replace("[INMIND] ", "")
+            messageText.setText(message.getMessage().replace(INMIND, "")
                     .replace("InMind:", ""));
             timeText.setText(DateUtils.formatTime(message.getCreatedAt()));
 

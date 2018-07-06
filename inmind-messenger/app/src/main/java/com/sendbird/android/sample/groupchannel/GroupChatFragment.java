@@ -785,7 +785,7 @@ public class GroupChatFragment extends Fragment {
     }
 
     private void sendUserMessage(final String text) {
-        MessageController.send(text);
+        MessageController.getInstance().send(text);
 
         List<String> urls = WebUtils.extractUrls(text);
         if (urls.size() > 0) {

@@ -9,17 +9,21 @@ public class Action {
     private String user;
     private String message;
     private String notificationMessage;
-    private boolean shouldUseDelay;
-    private boolean isMsgForSelf;
+    private ActionCallback callback;
 
     public Action(String user, String message) {
         this.user = StringUtils.capitalize(user);
         this.message = message;
     }
 
-    public Action(String user, String message, boolean shouldUseDelay) {
+    public Action(String user, String message, String notificationMessage) {
         this(user, message);
-        this.shouldUseDelay = shouldUseDelay;
+        this.notificationMessage = notificationMessage;
+    }
+
+    public Action(String user, String message, ActionCallback callback) {
+        this(user, message);
+        this.callback = callback;
     }
 
     public String getUser() {
@@ -38,14 +42,6 @@ public class Action {
         this.message = message;
     }
 
-    public boolean isShouldUseDelay() {
-        return shouldUseDelay;
-    }
-
-    public void setShouldUseDelay(boolean shouldUseDelay) {
-        this.shouldUseDelay = shouldUseDelay;
-    }
-
     public String getNotificationMessage() {
         return notificationMessage;
     }
@@ -54,11 +50,11 @@ public class Action {
         this.notificationMessage = notificationMessage;
     }
 
-    public boolean isMsgForSelf() {
-        return isMsgForSelf;
+    public ActionCallback getCallback() {
+        return callback;
     }
 
-    public void setMsgForSelf(boolean msgForSelf) {
-        isMsgForSelf = msgForSelf;
+    public void setCallback(ActionCallback callback) {
+        this.callback = callback;
     }
 }
