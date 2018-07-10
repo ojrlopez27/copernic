@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:984140644677:android:abe06d49c04fba23",
         "android_client_info": {
-          "package_name": "com.sendbird.android.sample"
+          "package_name": "edu.cmu.inmind.messenger"
         }
       },
       "oauth_client": [

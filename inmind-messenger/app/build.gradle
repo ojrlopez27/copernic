@@ -4,7 +4,7 @@ android {
     compileSdkVersion 27
     buildToolsVersion '27.0.3'
     defaultConfig {
-        applicationId "com.sendbird.android.sample"
+        applicationId "edu.cmu.inmind.messenger"
         minSdkVersion 14
         targetSdkVersion 27
         versionCode getVersionCode()
@@ -75,6 +75,6 @@ dependencies {
     implementation 'com.dinuscxj:circleprogressbar:1.1.1'
     implementation 'com.github.stfalcon:multiimageview:0.1'
 
-    implementation group :'edu.cmu.inmind.framework.multiuser', name: 'client', version: '3.0.44', classifier: 'all'
+    implementation group :'edu.cmu.inmind.framework.multiuser', name: 'client', version: '3.0.52', classifier: 'all'
 }
 apply plugin: 'com.google.gms.google-services'

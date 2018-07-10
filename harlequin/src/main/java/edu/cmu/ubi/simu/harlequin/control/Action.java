@@ -10,15 +10,21 @@ public class Action {
     private String message;
     private String notificationMessage;
     private ActionCallback callback;
+    private long whenToBeTriggered;
 
     public Action(String user, String message) {
         this.user = StringUtils.capitalize(user);
         this.message = message;
     }
 
+
     public Action(String user, String message, String notificationMessage) {
+        this(user, message, notificationMessage, 0);
+    }
+    public Action(String user, String message, String notificationMessage, long whenToBeTriggered) {
         this(user, message);
         this.notificationMessage = notificationMessage;
+        this.whenToBeTriggered = whenToBeTriggered;
     }
 
     public Action(String user, String message, ActionCallback callback) {
@@ -56,5 +62,13 @@ public class Action {
 
     public void setCallback(ActionCallback callback) {
         this.callback = callback;
+    }
+
+    public long getWhenToBeTriggered() {
+        return whenToBeTriggered;
+    }
+
+    public void setWhenToBeTriggered(long whenToBeTriggered) {
+        this.whenToBeTriggered = whenToBeTriggered;
     }
 }

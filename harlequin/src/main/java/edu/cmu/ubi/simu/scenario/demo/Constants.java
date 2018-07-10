@@ -128,15 +128,15 @@ public class Constants {
 
         S17_BOB_COUPONS,
 
-        S17_1_INTERMEDIATE, //let's wait for the next state
+		S18_BOB_GO_PHARMACY, //let's wait for the next state
 
-        S18_BOB_GO_HOME_DECO,
+		S19_BOB_GO_HOME_DECO,
 
-        S19_ALICE_GO_HOME_DECO,
+		S20_ALICE_GO_HOME_DECO,
 
-        S20_GO_HOME,
+		S21_GO_HOME,
 
-        S21_AT_HOME;
+		S22_AT_HOME;
 
 		public Events copy(){
 			return values()[this.ordinal()];

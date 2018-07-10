@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 clear
-adb uninstall com.sendbird.android.sample
+adb uninstall edu.cmu.inmind.messenger

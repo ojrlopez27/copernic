@@ -29,6 +29,7 @@ import de.nec.nle.siafu.model.Position;
 import de.nec.nle.siafu.model.World;
 import de.nec.nle.siafu.types.EasyTime;
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.ubi.simu.harlequin.control.ActionCallback;
 import edu.cmu.ubi.simu.harlequin.control.HarlequinController;
 import edu.cmu.ubi.simu.harlequin.plugin.AgentSimuExecutor;
@@ -68,13 +69,13 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	private Position startAlice;
 
 	/** Bob and Alice's markets of choice. */
-	private Place market1, market2;
+	private Place target, wholefoods;
 
 	/** Bob and Alice's pharmacies of choice. */
-	private Place pharmacy1, pharmacy2;
+	private Place rite_aid, cvs;
 
 	/** Bob and Alice's homedecos of choice. */
-	private Place homedeco1, homedeco2;
+	private Place ikea, art_deco;
 
 	/** Bob and Alice's beershops of choice. */
 	private Place beershop1, beershop2;
@@ -123,7 +124,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	 * @return a list with the simulation's agents.
 	 */
 	public ArrayList<Agent> createAgents() {
-		System.out.println("Creating " + population + " people");
+        Log4J.info(this,"Creating " + population + " people");
 		ArrayList<Agent> people =
 				AgentGenerator.createRandomPopulation(population, world);
 
@@ -140,12 +141,12 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 		try {
             beershop1 = world.getPlaceByName("BeerShop-666.681");
             beershop2 = world.getPlaceByName("BeerShop-213.584");
-            market1 = world.getPlaceByName("Market-625.567");
-            market2 = world.getPlaceByName("Market-259.686");
-            pharmacy1 = world.getPlaceByName("Pharmacy-488.238");
-            pharmacy2 = world.getPlaceByName("Pharmacy-243.442");
-            homedeco1 = world.getPlaceByName("HomeDeco-206.210");
-            homedeco2 = world.getPlaceByName("HomeDeco-281.78");
+            target = world.getPlaceByName("Market-625.567");
+            wholefoods = world.getPlaceByName("Market-259.686");
+            rite_aid = world.getPlaceByName("Pharmacy-488.238");
+            cvs = world.getPlaceByName("Pharmacy-243.442");
+            ikea = world.getPlaceByName("HomeDeco-206.210");
+            art_deco = world.getPlaceByName("HomeDeco-281.78");
             home = world.getPlaceByName("Home-26.264");
 
 			startAlice = world.getPlacesOfType("StartAlice").iterator().next().getPos();
@@ -158,13 +159,13 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
             Alice.setPos(startAlice);
             Alice.setImage("HumanYellow");
             Alice.setVisible(true);
-            Alice.setSpeed(5);
+            Alice.setSpeed(3);
 
             Bob.setName("Bob");
             Bob.setPos(startBob);
             Bob.setImage("HumanBlue");
             Bob.setVisible(true);
-            Bob.setSpeed(5);
+            Bob.setSpeed(3);
 
             world.stopSpinning(true);
 		} catch (Exception e) {
@@ -276,7 +277,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                         break;
 
                     case S9_1_BOB_MOVE_TO_GROCERY:
-                        movingSimuStep(now.isAfter(S9_1_TIME), Bob, market1);
+                        movingSimuStep(now.isAfter(S9_1_TIME), Bob, target);
                         break;
 
                     case S10_ALICE_ADD_PREF:
@@ -287,12 +288,12 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                     case S11_ALICE_DO_GROCERY:
                         if( basicSimuStep(now.isAfter(S11_TIME), Alice,
                                 new String[]{ "Alice: OK, I'll do", "the grocery shop."}) ) {
-                            Bob.wanderAround(pharmacy1, 10);
+                            Bob.wanderAround(rite_aid, 10);
                         }
                         break;
 
                     case S11_1_ALICE_MOVE_TO_GROCERY:
-                        movingSimuStep(now.isAfter(S11_1_TIME), Alice, market2);
+                        movingSimuStep(now.isAfter(S11_1_TIME), Alice, wholefoods);
                         break;
 
                     case S12_BOB_FIND_BEER:
@@ -324,38 +325,38 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                         break;
 
                     case S15_1_BOB_MOVE_HOME_DECO:
-                        movingSimuStep(now.isAfter(S15_1_TIME), Bob, homedeco1);
+                        movingSimuStep(now.isAfter(S15_1_TIME), Bob, ikea);
                         break;
 
                     case S16_ALICE_HEADACHE:
                         if( basicSimuStep(now.isAfter(S16_TIME), Bob,
                                 new String[]{ "Alice: could you stop", "by a pharmacy?" }) ) {
-                            Bob.wanderAround(market1, 1);
+                            Bob.wanderAround(target, 1);
                         }
                         break;
 
                     case S17_BOB_COUPONS:
                         if( basicSimuStep(now.isAfter(S17_TIME), Bob,
                                 new String[]{"InMind: pharmacy 1 is closer,", "but you have coupons for pharmacy 2"} ) ) {
-                            Bob.setDestination(pharmacy2);
+                            Bob.setDestination(cvs);
                         }
                         break;
 
-                    case S18_BOB_GO_HOME_DECO:
+                    case S19_BOB_GO_HOME_DECO:
                         if( basicSimuStep(now.isAfter(S18_TIME) && Bob.isAtDestination(), Bob,
                                 new String[]{ "InMind: you can meet with Alice at Home Deco 1"}) ) {
-                            Bob.setDestination(homedeco1);
+                            Bob.setDestination(ikea);
                         }
                         break;
 
-                    case S19_ALICE_GO_HOME_DECO:
+                    case S20_ALICE_GO_HOME_DECO:
                         if( basicSimuStep(now.isAfter(S19_TIME), Alice,
                                 new String[]{ "InMind: you can meet with Bob at Home Deco 1"}) ) {
-                            Alice.setDestination(homedeco1);
+                            Alice.setDestination(ikea);
                         }
                         break;
 
-                    case S20_GO_HOME:
+                    case S21_GO_HOME:
                         if( basicSimuStep(now.isAfter(S20_TIME), Bob, new String[]{ "Alice: I'm here" }) ){
                             Alice.setDestination(home);
                             Bob.setDestination(home);
@@ -365,7 +366,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 						throw new RuntimeException("Invalid simulation state");
 				}
 			} catch (Exception e) {
-				System.out.println("GUI not ready");
+                Log4J.error(this,"GUI not ready");
 			}
 		}
 	}
@@ -379,7 +380,6 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 user.setDestination(destination);
                 if(options.length == 0 || options[0]) {
                     harlequinController.runOneStep();
-                    //event = event.increment();
                 }
                 return true;
             }
@@ -487,7 +487,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
         try{
             basicSimuStep(true, agent, messages, true, true, false);
         } catch (Exception e) {
-            System.out.println("GUI not ready");
+            Log4J.error(this,"GUI not ready");
         }
     }
 
@@ -530,33 +530,30 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 break;
 
             case S15_BOB_GO_HOME_DECO:
-                movingSimuStep(true, Bob, homedeco1, false);
+                movingSimuStep(true, Bob, ikea, false);
                 CommonUtils.execute(() -> {
                     CommonUtils.sleep(2000);
-                    Bob.wanderAround(market1, 1);
+                    Bob.wanderAround(target, 1);
                 });
                 break;
 
-            case S16_ALICE_HEADACHE:
-                //Bob.wanderAround(market1, 1);
-                break;
-
             case S17_BOB_COUPONS:
-                Bob.wanderAround(market1, 1);
-                Bob.setDestination(pharmacy2);
+                Bob.wanderAround(target, 1);
                 break;
 
-            case S18_BOB_GO_HOME_DECO:
-                Bob.setDestination(homedeco1);
+            case S18_BOB_GO_PHARMACY:
+                movingSimuStep(true, Bob, cvs, false);
                 break;
 
-            case S19_ALICE_GO_HOME_DECO:
-                Alice.setDestination(homedeco1);
-                break;
-
-            case S20_GO_HOME:
-                Alice.setDestination(home);
-                Bob.setDestination(home);
+            case S19_BOB_GO_HOME_DECO:
+                movingSimuStep(true, Bob, ikea, false);
+                CommonUtils.execute(() -> {
+                    CommonUtils.sleep(2000);
+                    movingSimuStep(true, Alice, ikea, false);
+                    CommonUtils.sleep(15000);
+                    movingSimuStep(true, Alice, home, false);
+                    movingSimuStep(true, Bob, home, false);
+                });
                 break;
             default:
                 throw new RuntimeException("Invalid simulation state: " + event);
@@ -564,16 +561,16 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
     }
 
     private void moveBobToGrocery(ActionCallback callback) {
-        movingSimuStep(true, Bob, market1, false);
+        movingSimuStep(true, Bob, target, false);
         CommonUtils.execute(() -> {
             CommonUtils.sleep(2500);
             callback.execute();
-            Bob.wanderAround(pharmacy1, 10);
+            Bob.wanderAround(rite_aid, 10);
         });
     }
 
     private void moveAliceToGrocery(ActionCallback callback) {
         callback.execute();
-        movingSimuStep(true, Alice, market2, false);
+        movingSimuStep(true, Alice, wholefoods, false);
     }
 }

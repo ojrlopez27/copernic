@@ -47,17 +47,18 @@ public class IntentExtractorPlugin extends PluggableComponent {
             if(sessionId.equals("Bob")) simuStep = S14_BOB_FIND_HOME_DECO;
         }else if( match(command, "*IKEA*") ){
             if(sessionId.equals("Bob")) simuStep = S15_BOB_GO_HOME_DECO;
-        }else if( match(command, "*pharmacy*") || command.contains("pharmacy") ){
+        }else if( match(command, "*headache*pharmacy*ibuprofen*") || command.contains("ibuprofen") ){
             if(sessionId.equals("Alice")) simuStep = S16_ALICE_HEADACHE;
+        }else if( match(command, "*CVS*") || command.contains("CVS") ){
+            simuStep = S18_BOB_GO_PHARMACY;
         }else if( match(command, "*medication*") ){
-            simuStep = S18_BOB_GO_HOME_DECO;
+            simuStep = S19_BOB_GO_HOME_DECO;
         }else if( match(command, "*here*") ){
-            if(sessionId.equals("Alice")) simuStep = S20_GO_HOME;
+            if(sessionId.equals("Alice")) simuStep = S21_GO_HOME;
         }
 
         if( simuStep != null ) {
-            String response = harlequinController.executeEvent(sessionId, command, simuStep);
-            if (response != null) blackboard.post(this, MsgConstants.MSG_SEND_RESPONSE, response);
+            harlequinController.executeEvent(sessionId, command, simuStep);
         }
     }
 

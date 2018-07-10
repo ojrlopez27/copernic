@@ -34,6 +34,7 @@ import de.nec.nle.siafu.model.Agent;
 import de.nec.nle.siafu.model.Position;
 import de.nec.nle.siafu.model.World;
 import de.nec.nle.siafu.types.EasyTime;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
 import static edu.cmu.ubi.simu.scenario.glasgow.Constants.*;
 import static edu.cmu.ubi.simu.scenario.glasgow.Constants.Fields.ACTIVITY;
@@ -74,7 +75,7 @@ public class AgentModel extends BaseAgentModel {
 	 * @return a list with the simulation's agents.
 	 */
 	public ArrayList<Agent> createAgents() {
-		System.out.println("Creating " + population + " people");
+		Log4J.info(this,"Creating " + population + " people");
 		ArrayList<Agent> people =
 				AgentGenerator.createRandomPopulation(population, world);
 
@@ -200,7 +201,7 @@ public class AgentModel extends BaseAgentModel {
 				}
 			} catch (InfoUndefinedException e) {
 				e.printStackTrace();
-				System.err.println("Information missing to handle "
+				Log4J.error(this,"Information missing to handle "
 						+ a.getName() + ". Skipping.");
 				return;
 			}

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
     android:background="@android:color/black"
-    tools:context=".utils.MediaPlayerActivity">
+    tools:context="edu.cmu.inmind.messenger.utils.MediaPlayerActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"

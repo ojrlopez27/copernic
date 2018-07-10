@@ -11,6 +11,8 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.ubi.simu.harlequin.control.HarlequinController;
 import edu.cmu.ubi.simu.harlequin.util.MsgConstants;
 
+import static edu.cmu.ubi.simu.harlequin.util.MsgConstants.ACK;
+
 /**
  * Created by oscarr on 5/7/18.
  */
@@ -34,8 +36,12 @@ public class SimuOrchestrator extends ProcessOrchestratorImpl {
     public void process(String message) throws Throwable {
         super.process(message);
         SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
+        // if an user says "hi" in order to start the interaction, we just send back a confirmation
+        if( sessionMessage.getPayload().equalsIgnoreCase("Hi") ) {
+            sendInMindResponse(ACK);
+        }
         // if we receive messages from the other phone, then just print them on the current phone
-        if( sessionMessage.getRequestType().equals(Constants.CROSS_SESSION_MESSAGE) ){
+        else if( sessionMessage.getRequestType().equals(Constants.CROSS_SESSION_MESSAGE) ){
             sendInMindResponse(sessionMessage.getPayload(), sessionMessage.getMessageId());
         }
         // otherwise, processes the message

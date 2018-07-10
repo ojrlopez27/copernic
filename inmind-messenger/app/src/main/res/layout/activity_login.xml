@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
-    tools:context=".main.LoginActivity"
+    tools:context="edu.cmu.inmind.messenger.main.LoginActivity"
     android:background="#ffffff">
 
     <TextView
