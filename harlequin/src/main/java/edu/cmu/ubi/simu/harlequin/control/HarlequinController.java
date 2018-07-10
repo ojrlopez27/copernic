@@ -456,7 +456,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
      * @param event         specific event triggered depending on user intention
      * @return
      */
-    public String onUserCommandEvent(String sessionId, String command, Constants.Events event) {
+    public void onUserCommandEvent(String sessionId, String command, Constants.Events event) {
         currentEvent = event.copy();
         String response = "";
         switch (event){
@@ -467,13 +467,10 @@ public class HarlequinController implements Runnable, VisualizerObserver {
 
             case S9_BOB_DO_GROCERY:
                 response = "Sounds perfect Bob!";
-                addStates(getInfoFromStorage(event));
-                addStates(bob_is_willing_to_do_grocery_shopping);
                 break;
 
             case S11_ALICE_DO_GROCERY:
                 response = "A little change in plans, thanks Alice!";
-                addStates(alice_is_willing_to_do_grocery_shopping);
                 break;
 
             case S13_2_ALICE_AT_SUPERMARKET:
@@ -504,19 +501,21 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                 response = "Thanks for letting me know";
                 break;
         }
-        executeCommandOnSimuWorld(sessionId, command, event);
         onNextTriggerActions(event);
 
         if ( !response.isEmpty() ) {
             final String finalResponse = response;
             CommonUtils.execute(() -> {
+                // we need this delay in order to simulate harlequin is processing info and making decisions (since we
+                // are not using a real NLU, user intents are recognized almost instantaneously, which is not how it
+                // uses to happen)
                 CommonUtils.sleep( DELAY_SEND_TO_DEVICE );
+                executeCommandOnSimuWorld(sessionId, command, event);
                 Action action = new Action( sessionId, finalResponse);
                 sendToOrchestrator(action);
                 sendToChoreographer(action);
             });
         }
-        return response;
     }
 
 
@@ -558,8 +557,10 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     break;
 
                 case S9_BOB_DO_GROCERY:
+                    addStates( getInfoFromStorage(event) );
+                    addStates( bob_is_willing_to_do_grocery_shopping);
                     //S9_1_BOB_MOVE_TO_GROCERY:
-                    addToMap(bob_do_grocery_shopping, new Action(bob, MOVE, () -> {
+                    addToMap( bob_do_grocery_shopping, new Action(bob, MOVE, () -> {
                         removeStates(bob_is_willing_to_do_grocery_shopping);
                         //it simulates getting a notification from an organic supermarket
                         addStates(alice_close_to_organic_supermarket);
@@ -569,6 +570,7 @@ public class HarlequinController implements Runnable, VisualizerObserver {
                     break;
 
                 case S11_ALICE_DO_GROCERY:
+                    addStates(alice_is_willing_to_do_grocery_shopping);
                     //S11_1_ALICE_MOVE_TO_GROCERY:
                     addToMap(alice_do_grocery_shopping, new Action(alice, MOVE, () -> {
                         removeStates(bob_grocery_shopping_required,
