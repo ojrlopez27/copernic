@@ -19,12 +19,12 @@ import static edu.cmu.ubi.simu.scenario.demo.Constants.Events.*;
  */
 @StateType(state = Constants.STATEFULL)
 @BlackboardSubscription(messages = {MsgConstants.MSG_PROCESS_COMMAND})
-public class IntentExtractorPlugin extends PluggableComponent {
+public class IntentExtractorComponent extends PluggableComponent {
 
     private String sessionId;
     private HarlequinController harlequinController;
 
-    public IntentExtractorPlugin() {
+    public IntentExtractorComponent() {
         harlequinController = HarlequinController.getInstance();
     }
 
@@ -58,7 +58,7 @@ public class IntentExtractorPlugin extends PluggableComponent {
         }
 
         if( simuStep != null ) {
-            harlequinController.executeEvent(sessionId, command, simuStep);
+            harlequinController.onUserCommandEvent(sessionId, command, simuStep);
         }
     }
 

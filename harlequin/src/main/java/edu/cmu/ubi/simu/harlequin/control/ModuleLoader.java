@@ -5,7 +5,7 @@ import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.ubi.simu.harlequin.orchestrator.SimuOrchestrator;
-import edu.cmu.ubi.simu.harlequin.plugin.IntentExtractorPlugin;
+import edu.cmu.ubi.simu.harlequin.plugin.IntentExtractorComponent;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +28,7 @@ public class ModuleLoader {
     public static PluginModule[] createComponents() {
         return new PluginModule[]{
                 new PluginModule.Builder(SimuOrchestrator.class,
-                        IntentExtractorPlugin.class, "IntentExtractorPlugin")
+                        IntentExtractorComponent.class, "IntentExtractorComponent")
                         .build()
         };
     }

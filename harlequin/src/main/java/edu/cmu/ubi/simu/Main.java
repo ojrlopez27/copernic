@@ -4,9 +4,11 @@ import edu.cmu.ubi.simu.harlequin.control.HarlequinController;
 import edu.cmu.ubi.simu.scenario.demo.SimuController;
 
 /**
+ * This is a main class that starts two main processes:
+ * 1) the process orchestration carried out by HarlequinController and
+ * 2) the simulation performed by Siafu simulator
  * Created by oscarr on 5/4/18.
  */
-
 public class Main{
     public static final boolean useMUF = true;
     public static final boolean useSimu = true;

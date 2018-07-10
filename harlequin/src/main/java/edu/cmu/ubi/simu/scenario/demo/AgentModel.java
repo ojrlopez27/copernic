@@ -103,7 +103,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	public AgentModel(final World world) {
 		super(world);
 		harlequinController = HarlequinController.getInstance();
-		harlequinController.addAgentModel(this);
+		harlequinController.setAgentModel(this);
 		harlequinController.setWorld(world);
 	}
 
@@ -206,8 +206,8 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 	public void doIteration(final Collection<Agent> agents) {
 	    if( firstTime ){
 	        try{
-                world.addMarker( new DoubleLineMarker(Alice, getColor(""), new String[]{"I am Alice!"}));
-                world.addMarker( new DoubleLineMarker(Bob, getColor(""), new String[]{"I am Bob!"}) );
+                world.addMarker( new DoubleLineMarker(Alice, getColor(), new String[]{"I am Alice!"}));
+                world.addMarker( new DoubleLineMarker(Bob, getColor(), new String[]{"I am Bob!"}) );
             }catch (Exception e){
 	            e.printStackTrace();
             }
@@ -371,16 +371,13 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
 		}
 	}
 
-    private boolean movingSimuStep(boolean conditionMet, Agent user, Place destination, boolean... options) {
+    private boolean movingSimuStep(boolean conditionMet, Agent user, Place destination) {
         try{
             if( conditionMet ){
                 //world.stopSpinning(true);
                 Marker marker = new SpotMarker(user, "#da270c");
                 world.addMarker(marker);
                 user.setDestination(destination);
-                if(options.length == 0 || options[0]) {
-                    harlequinController.runOneStep();
-                }
                 return true;
             }
         }catch (Exception e){
@@ -404,7 +401,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 world.unMarkAll();
                 Agent otherUser = user.equals(Alice) ? Bob : Alice;
                 //world.stopSpinning(true);
-                Marker mainMarker = new DoubleLineMarker(user, getColor(text[0]), text);
+                Marker mainMarker = new DoubleLineMarker(user, getColor(), text);
                 world.addMarker(mainMarker);
                 if( params.length == 0 || params[0] ) {
                     Marker secMarker = new SpotMarker(otherUser, "#2d2973"); //  "#da270c"
@@ -423,9 +420,7 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
         return false;
     }
 
-    private String getColor(String caption) {
-//        if( caption.contains("InMind:") ) return "#da270c"; //"#2d2973";  // purple
-//        return "#da270c";  //red
+    private String getColor() {
         String color;
         if( flip ) color = "#2d2973"; //#ffa500 orange.   "#2d2973"; //purple
         else color = "#da270c"; //red
@@ -476,13 +471,13 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
     /**
      * This method is called only by HarlequinController. It executes one step of the simulation immediately after
      * being called.
-     * @param sessionId
+     * @param userId
      * @param message
      * @param event
      */
     @Override
-    public void runStep(String sessionId, String message, Events event) {
-        Agent agent = sessionId.equalsIgnoreCase("Bob")? Bob : Alice;
+    public void runStep(String userId, String message, Events event) {
+        Agent agent = userId.equalsIgnoreCase("Bob")? Bob : Alice;
         String[] messages = SimuUtils.breakIntoMessages(message);
         try{
             basicSimuStep(true, agent, messages, true, true, false);
@@ -496,16 +491,22 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
      * to sync messages that are shown in the simulation frame. Also, it sends messages from one user to another using
      * the sendToOrchestrator method.
      * @param delay
-     * @param sessionId
+     * @param userId
      * @param message
      */
     @Override
-    public void runStep(long delay, String sessionId, String message) {
+    public void runStep(long delay, String userId, String message) {
         CommonUtils.sleep(delay);
-        Agent agent = sessionId.equalsIgnoreCase("Bob")? Bob : Alice;
+        Agent agent = userId.equalsIgnoreCase("Bob")? Bob : Alice;
         basicSimuStep(true, agent, SimuUtils.breakIntoMessages(message), true, true, false);
     }
 
+    /***
+     * It executes a "move" action on the simulation world. Some of these actions may require to do something after
+     * some time has passed (a delay) so a callback is provided and invoked when needed.
+     * @param event
+     * @param callback
+     */
     @Override
     public void move(Events event, ActionCallback callback) {
         switch (event) {
@@ -526,11 +527,11 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 break;
 
             case S13_BOB_GO_BEER_SHOP:
-                movingSimuStep(true, Bob, beershop1, false);
+                movingSimuStep(true, Bob, beershop1);
                 break;
 
             case S15_BOB_GO_HOME_DECO:
-                movingSimuStep(true, Bob, ikea, false);
+                movingSimuStep(true, Bob, ikea);
                 CommonUtils.execute(() -> {
                     CommonUtils.sleep(2000);
                     Bob.wanderAround(target, 1);
@@ -542,17 +543,17 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
                 break;
 
             case S18_BOB_GO_PHARMACY:
-                movingSimuStep(true, Bob, cvs, false);
+                movingSimuStep(true, Bob, cvs);
                 break;
 
             case S19_BOB_GO_HOME_DECO:
-                movingSimuStep(true, Bob, ikea, false);
+                movingSimuStep(true, Bob, ikea);
                 CommonUtils.execute(() -> {
                     CommonUtils.sleep(2000);
-                    movingSimuStep(true, Alice, ikea, false);
+                    movingSimuStep(true, Alice, ikea);
                     CommonUtils.sleep(15000);
-                    movingSimuStep(true, Alice, home, false);
-                    movingSimuStep(true, Bob, home, false);
+                    movingSimuStep(true, Alice, home);
+                    movingSimuStep(true, Bob, home);
                 });
                 break;
             default:
@@ -560,8 +561,12 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
         }
     }
 
+    /***
+     * Executes a movement towards Target supermarket
+     * @param callback
+     */
     private void moveBobToGrocery(ActionCallback callback) {
-        movingSimuStep(true, Bob, target, false);
+        movingSimuStep(true, Bob, target);
         CommonUtils.execute(() -> {
             CommonUtils.sleep(2500);
             callback.execute();
@@ -569,8 +574,12 @@ public class AgentModel extends BaseAgentModel implements AgentSimuExecutor {
         });
     }
 
+    /***
+     * Executes a movement towards WholeFoods supermarket
+     * @param callback
+     */
     private void moveAliceToGrocery(ActionCallback callback) {
         callback.execute();
-        movingSimuStep(true, Alice, wholefoods, false);
+        movingSimuStep(true, Alice, wholefoods);
     }
 }
