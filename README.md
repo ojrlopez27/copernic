@@ -1,5 +1,7 @@
 # HARLEQUIN
 
+(See a demo here: <a href="https://drive.google.com/open?id=1UTuc8qolEryF4xxTRj8o7UvSRWjOaPyn">video</a>)
+
 **HARLEQUIN** stands for **H**ybrid, **A**daptive, high-pe**R**formance midd**LE**ware for ubi**QUI**tous e**N**vironments. HARLEQUIN provides:
 
 1. A Communication layer for:
