@@ -1,3 +1,5 @@
+.idea/
+siafu/Siafu/target/
 
 .DS_Store
 
@@ -14,7 +16,7 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
+# *.jar
 *.war
 *.nar
 *.ear
