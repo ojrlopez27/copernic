@@ -1,8 +1,8 @@
-# HARLEQUIN
+# COPERNIC (former called HARLEQUIN)
 
 (See a demo here: <a href="https://drive.google.com/open?id=1UTuc8qolEryF4xxTRj8o7UvSRWjOaPyn">video</a>)
 
-**HARLEQUIN** stands for **H**ybrid, **A**daptive, high-pe**R**formance midd**LE**ware for ubi**QUI**tous e**N**vironments. HARLEQUIN provides:
+**COPERNIC** stands for **CO**gnitively-inspired **P**ervasive middl**E**ware for eme**R**ge**N**t serv**I**ce **C**omposition. COPERNIC provides:
 
 1. A Communication layer for:
 	1.1 Discovering devices in a proximity network using sockets UDP
