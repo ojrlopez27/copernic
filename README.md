@@ -1,5 +1,14 @@
 # COPERNIC (former called HARLEQUIN)
 
+![coverage](https://img.shields.io/badge/coverage-90%25-yellowgreen.svg?cacheSeconds=2592000) 
+![language](https://img.shields.io/badge/language-Java-yellowgreen.svg?cacheSeconds=2592000) 
+![language](https://img.shields.io/badge/language-Android-yellowgreen.svg?cacheSeconds=2592000) 
+![version](https://img.shields.io/badge/version-2.0-blue.svg?cacheSeconds=2592000)
+![build](https://img.shields.io/badge/build-passed-green.svg?cacheSeconds=2592000)
+![test](https://img.shields.io/badge/test-passed-green.svg?cacheSeconds=2592000)
+![dependencies](https://img.shields.io/badge/dependencies-MUF-orange.svg?cacheSeconds=2592000)
+![codacy](https://img.shields.io/badge/codacy-B-green.svg?cacheSeconds=2592000)
+
 (See a demo here: <a href="https://drive.google.com/open?id=1UTuc8qolEryF4xxTRj8o7UvSRWjOaPyn">video</a>)
 
 **COPERNIC** stands for **CO**gnitively-inspired **P**ervasive middl**E**ware for eme**R**ge**N**t serv**I**ce **C**omposition. COPERNIC provides:
