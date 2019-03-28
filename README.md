@@ -57,7 +57,7 @@ Unlike traditional approaches that create upfront composition plans which are pr
 
 Distributed Architecture:
 <p align="center">
-    <img align="center" width="75%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
+    <img align="center" width="100%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
 </p>
 
 
