@@ -40,7 +40,7 @@ Automatic service composition in pervasive computing faces many challenges due t
 
 COPERNIC Architecture:
 <p align="center">
-    <img align="center" width="75%" src="copernic-architecture.png" alt="COPERNIC Architecture" title="COPERNIC Architecture"</img>   
+    <img align="center" width="100%" src="copernic-architecture.png" alt="COPERNIC Architecture" title="COPERNIC Architecture"</img>   
 </p>
 
 * **Step 1**: the Perception module makes sense of the agent's current state by processing both external (e.g., user requests) and internal (i.e., signals from other modules) sensory inputs, categorizing that information, and recognizing situations where a set of abstract services may be triggered. 
@@ -57,7 +57,7 @@ Unlike traditional approaches that create upfront composition plans which are pr
 
 Distributed Architecture:
 <p align="center">
-    <img align="center" width="100%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
+    <img align="center" width="75%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
 </p>
 
 
