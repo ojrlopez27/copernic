@@ -63,7 +63,7 @@ public class MessageController implements ResponseListener{
 
     public void connect(){
         clientCommController = new ClientCommController.Builder(new LogC() )
-                .setServerAddress( "tcp://inmind-harlequin.ddns.net:5555" )
+                .setServerAddress( "tcp://inmind-copernic.ddns.net:5555" )
                 .setSessionId(sessionId)
                 .setRequestType(Constants.REQUEST_CONNECT)
                 .setResponseListener(this)
