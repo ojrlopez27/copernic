@@ -42,7 +42,7 @@ COPERNIC Architecture:
     <img align="center" width="75%" src="copernic-architecture.png" alt="COPERNIC Architecture" title="COPERNIC Architecture"</img>   
 </p>
 
-
+Distributed Architecture:
 <p align="center">
     <img align="center" width="75%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
 </p>
