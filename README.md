@@ -1,4 +1,4 @@
-# COPERNIC (former called HARLEQUIN)
+# COPERNIC
 
 Status for master branch:
 
