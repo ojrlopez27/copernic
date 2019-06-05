@@ -60,4 +60,24 @@ Distributed Architecture:
     <img align="center" width="75%" src="cross-user-cross-session.png" alt="Cross-user, cross-session coordination" title="Cross-user, cross-session coordination"</img>   
 </p>
 
+## How to cite our work
 
+Please cite the [AIMS'19](https://arxiv.org/abs/1905.12630v1) or the [SCC'19](https://arxiv.org/abs/1906.00772v1) papers if you use COPERNIC in your work:
+
+```
+@inproceedings{copernic:aims:2019,
+  title = {Cognitively-inspired Agent-based Service Composition for Mobile & Pervasive Computing},
+  author = {{Romero}, {Oscar} J.},
+  booktitle = {International Conference on Artificial Intelligence and Mobile Services},
+  year          = "2019",
+  pages         = "00--00"
+}
+
+@inproceedings{copernic:scc:2019,
+  title = {Dynamic Service Composition Orchestrated by Cognitive Agents in Mobile & Pervasive Computing},
+  author = {{Romero}, {Oscar} J.},
+  booktitle = {IEEE Conference on Services Computing Conference},
+  year          = "2019",
+  pages         = "00--00"
+}
+```
