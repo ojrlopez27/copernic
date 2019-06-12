@@ -62,7 +62,7 @@ Distributed Architecture:
 
 ## How to cite our work
 
-[AIMS'19](https://arxiv.org/abs/1905.12630v1):
+[AIMS'19 paper](https://arxiv.org/abs/1905.12630v1):
 
 ```
 @inproceedings{copernic:aims:2019,
@@ -74,7 +74,7 @@ Distributed Architecture:
 }
 ```
 
-[SCC'19](https://arxiv.org/abs/1906.00772v1)
+[SCC'19 paper](https://arxiv.org/abs/1906.00772v1)
 ```
 @inproceedings{copernic:scc:2019,
   title = {Dynamic Service Composition Orchestrated by Cognitive Agents in Mobile & Pervasive Computing},
