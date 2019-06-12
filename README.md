@@ -62,7 +62,7 @@ Distributed Architecture:
 
 ## How to cite our work
 
-Please cite the [AIMS'19](https://arxiv.org/abs/1905.12630v1) or the [SCC'19](https://arxiv.org/abs/1906.00772v1) papers if you use COPERNIC in your work:
+[AIMS'19](https://arxiv.org/abs/1905.12630v1):
 
 ```
 @inproceedings{copernic:aims:2019,
@@ -72,7 +72,10 @@ Please cite the [AIMS'19](https://arxiv.org/abs/1905.12630v1) or the [SCC'19](ht
   year          = "2019",
   pages         = "00--00"
 }
+```
 
+[SCC'19](https://arxiv.org/abs/1906.00772v1)
+```
 @inproceedings{copernic:scc:2019,
   title = {Dynamic Service Composition Orchestrated by Cognitive Agents in Mobile & Pervasive Computing},
   author = {{Romero}, {Oscar} J.},
